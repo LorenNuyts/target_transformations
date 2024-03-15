@@ -31,11 +31,11 @@ def run(data: Dataset, normalize_y=False, clf=DEFAULT_CLF):
         rskf = RepeatedStratifiedKFold(n_splits=2, n_repeats=5, random_state=SEED)
     all_scores = []
     for i, (train_index, test_index) in enumerate(rskf.split(data.X, data.y)):
-        # if i in results[clf_name].keys():
-        #     print(f"Fold {i} already in results, skipping...")
-            # continue
-        # else:
-        results[clf_name][i] = {}
+        if i in results[clf_name].keys():
+            print(f"Fold {i} already in results, skipping...")
+            continue
+        else:
+            results[clf_name][i] = {}
         # print(f"Fold {i}:")
         data.cross_validation(train_index, test_index, force=True)
         data.split_validation_set()

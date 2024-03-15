@@ -10,6 +10,7 @@ import time
 
 import sklearn.metrics as metrics
 from sklearn import preprocessing
+from sklearn.datasets import fetch_openml
 # from sklearn.datasets import fetch_openml
 # from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 # from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
@@ -23,7 +24,7 @@ from ucimlrepo import fetch_ucirepo
 from data.utils import SEED
 
 # MODEL_DIR = os.environ["MODEL_DIR"]
-# DATA_DIR = os.environ["DATA_DIR"]
+DATA_DIR = os.environ["DATA_DIR"]
 NTHREADS = os.cpu_count()
 
 
@@ -37,7 +38,7 @@ class Dataset:
     def __init__(self, task, name_suffix=""):
         self.task = task
         # self.model_dir = MODEL_DIR
-        # self.data_dir = DATA_DIR
+        self.data_dir = DATA_DIR
         self.nthreads = NTHREADS
 
         self.name_suffix = name_suffix  # special parameters, name indication
@@ -166,21 +167,35 @@ class Dataset:
         self.Xtrain = self.Xtrain.iloc[self.Itrain]
         self.ytrain = self.ytrain.iloc[self.Itrain]
 
+    def _load_ucirepo(self, name, data_id, force=False) -> (pd.DataFrame, pd.DataFrame):
+        if not os.path.exists(f"{self.data_dir}/{name}.h5") or force:
+            print(f"loading {name} with fetch_ucirepo")
+            dataset = fetch_ucirepo(id=data_id)
+            X = dataset.data.features
+            y = dataset.data.targets
+            X.to_hdf(f"{self.data_dir}/{name}.h5", key="X", complevel=9)
+            y.to_hdf(f"{self.data_dir}/{name}.h5", key="y", complevel=9)
 
-    # def _load_openml(self, name, data_id, force=False, X_type=np.float32, y_type=np.float32):
-    #     if not os.path.exists(f"{self.data_dir}/{name}.h5") or force:
-    #         print(f"loading {name} with fetch_openml")
-    #         X, y = fetch_openml(data_id=data_id, return_X_y=True, as_frame=True)
-    #         X = X.astype(X_type)
-    #         y = y.astype(y_type)
-    #         X.to_hdf(f"{self.data_dir}/{name}.h5", key="X", complevel=9)
-    #         y.to_hdf(f"{self.data_dir}/{name}.h5", key="y", complevel=9)
-    #
-    #     print(f"loading {name} h5 file")
-    #     X = pd.read_hdf(f"{self.data_dir}/{name}.h5", key="X")
-    #     y = pd.read_hdf(f"{self.data_dir}/{name}.h5", key="y")
-    #
-    #     return X, y
+        print(f"loading {name} h5 file")
+        X = pd.read_hdf(f"{self.data_dir}/{name}.h5", key="X")
+        y = pd.read_hdf(f"{self.data_dir}/{name}.h5", key="y")
+
+        return X, y
+
+    def _load_openml(self, name, data_id, force=False, X_type=np.float32, y_type=np.float32):
+        if not os.path.exists(f"{self.data_dir}/{name}.h5") or force:
+            print(f"loading {name} with fetch_openml")
+            X, y = fetch_openml(data_id=data_id, return_X_y=True, as_frame=True)
+            X = X.astype(X_type)
+            y = y.astype(y_type)
+            X.to_hdf(f"{self.data_dir}/{name}.h5", key="X", complevel=9)
+            y.to_hdf(f"{self.data_dir}/{name}.h5", key="y", complevel=9)
+
+        print(f"loading {name} h5 file")
+        X = pd.read_hdf(f"{self.data_dir}/{name}.h5", key="X")
+        y = pd.read_hdf(f"{self.data_dir}/{name}.h5", key="y")
+
+        return X, y
 
     # def _get_xgb_model(self, num_trees, tree_depth, model_cmp, metric_name, custom_params=None, naming_args=None):
     #     if naming_args is None:
@@ -990,12 +1005,11 @@ class Abalone(Dataset):
 
     def load_dataset(self):
         if self.X is None or self.y is None:
-            abalone = fetch_ucirepo(id=1)
-            self.X = abalone.data.features
+            self.X, self.y = self._load_ucirepo("abalone", data_id=1)
             self.encode_object_types()
             self.minmax_normalize()
 
-            self.y = abalone.data.targets.squeeze()
+            self.y = self.y.squeeze()
 
 
 class AutoMPG(Dataset):
@@ -1005,10 +1019,8 @@ class AutoMPG(Dataset):
 
     def load_dataset(self):
         if self.X is None or self.y is None:
-            dataset = fetch_ucirepo(id=9)
-
-            self.X = dataset.data.features
-            self.y = dataset.data.targets.squeeze()
+            self.X, self.y = self._load_ucirepo("AutoMPG", data_id=9)
+            self.y = self.y.squeeze()
             self.minmax_normalize()
 
 
@@ -1018,12 +1030,10 @@ class BikeSharing(Dataset):
 
     def load_dataset(self):
         if self.X is None or self.y is None:
-            dataset = fetch_ucirepo(id=275)
-            self.X = dataset.data.features
+            self.X, self.y = self._load_ucirepo("BikeSharing", data_id=275)
+            self.y = self.y.squeeze()
             self.encode_object_types()
             self.minmax_normalize()
-
-            self.y = dataset.data.targets.squeeze()
 
 
 class Challenger(Dataset):
@@ -1032,10 +1042,8 @@ class Challenger(Dataset):
 
     def load_dataset(self):
         if self.X is None or self.y is None:
-            dataset = fetch_ucirepo(id=92)
-
-            self.X = dataset.data.features
-            self.y = dataset.data.targets.squeeze()
+            self.X, self.y = self._load_ucirepo("Challenger", data_id=92)
+            self.y = self.y.squeeze()
             self.minmax_normalize()
 
 
@@ -1045,10 +1053,8 @@ class CombinedCyclePowerPlant(Dataset):
 
     def load_dataset(self):
         if self.X is None or self.y is None:
-            dataset = fetch_ucirepo(id=294)
-
-            self.X = dataset.data.features
-            self.y = dataset.data.targets.squeeze()
+            self.X, self.y = self._load_ucirepo("CombinedCyclePowerPlant", data_id=294)
+            self.y = self.y.squeeze()
             self.minmax_normalize()
 
 
@@ -1058,10 +1064,8 @@ class ComputerHardware(Dataset):
 
     def load_dataset(self):
         if self.X is None or self.y is None:
-            dataset = fetch_ucirepo(id=29)
-
-            self.X = dataset.data.features
-            self.y = dataset.data.targets.squeeze()
+            self.X, self.y = self._load_ucirepo("ComputerHardware", data_id=29)
+            self.y = self.y.squeeze()
             self.minmax_normalize()
 
 
@@ -1071,10 +1075,8 @@ class ConcreteCompressingStrength(Dataset):
 
     def load_dataset(self):
         if self.X is None or self.y is None:
-            dataset = fetch_ucirepo(id=165)
-
-            self.X = dataset.data.features
-            self.y = dataset.data.targets.squeeze()
+            self.X, self.y = self._load_ucirepo("ConcreteCompressingStrength", data_id=165)
+            self.y = self.y.squeeze()
             self.minmax_normalize()
 
 
@@ -1087,10 +1089,7 @@ class EnergyEfficiency1(Dataset):
 
     def load_dataset(self):
         if self.X is None or self.y is None:
-            dataset = fetch_ucirepo(id=242)
-
-            self.X = dataset.data.features
-            self.y = dataset.data.targets
+            self.X, self.y = self._load_ucirepo("EnergyEfficiency", data_id=242)
             self.y = self.y['Y1'].squeeze()
             self.minmax_normalize()
 
@@ -1104,10 +1103,7 @@ class EnergyEfficiency2(Dataset):
 
     def load_dataset(self):
         if self.X is None or self.y is None:
-            dataset = fetch_ucirepo(id=242)
-
-            self.X = dataset.data.features
-            self.y = dataset.data.targets
+            self.X, self.y = self._load_ucirepo("EnergyEfficiency", data_id=242)
             self.y = self.y['Y2'].squeeze()
             self.minmax_normalize()
 
@@ -1118,10 +1114,8 @@ class HeartFailure(Dataset):
 
     def load_dataset(self):
         if self.X is None or self.y is None:
-            dataset = fetch_ucirepo(id=519)
-
-            self.X = dataset.data.features
-            self.y = dataset.data.targets.squeeze()
+            self.X, self.y = self._load_ucirepo("HeartFailure", data_id=519)
+            self.y = self.y.squeeze()
             self.minmax_normalize()
 
 
@@ -1131,9 +1125,8 @@ class Iris(MulticlassDataset):
 
     def load_dataset(self):
         if self.X is None or self.y is None:
-            iris = fetch_ucirepo(id=53)
-            self.X = iris.data.features
-            self.y = iris.data.targets.squeeze()
+            self.X, self.y = self._load_ucirepo("Iris", data_id=53)
+            self.y = self.y.squeeze()
             self.encode_y()
             self.minmax_normalize()
 
@@ -1144,12 +1137,8 @@ class LiverDisorder(Dataset):
 
     def load_dataset(self):
         if self.X is None or self.y is None:
-            dataset = fetch_ucirepo(id=60)
-
-            self.X = dataset.data.features
-            # self.encode_object_types()
-            self.y = dataset.data.targets.squeeze()
-            # self.encode_y()
+            self.X, self.y = self._load_ucirepo("LiverDisorder", data_id=60)
+            self.y = self.y.squeeze()
             self.minmax_normalize()
 
 
@@ -1159,11 +1148,9 @@ class Obesity(Dataset):
 
     def load_dataset(self):
         if self.X is None or self.y is None:
-            dataset = fetch_ucirepo(id=544)
-
-            self.X = dataset.data.features
+            self.X, self.y = self._load_ucirepo("Obesity", data_id=544)
+            self.y = self.y.squeeze()
             self.encode_object_types()
-            self.y = dataset.data.targets.squeeze()
             self.encode_y()
             self.minmax_normalize()
 
@@ -1174,10 +1161,8 @@ class OnlineNewsPopularity(Dataset):
 
     def load_dataset(self):
         if self.X is None or self.y is None:
-            dataset = fetch_ucirepo(id=332)
-
-            self.X = dataset.data.features
-            self.y = dataset.data.targets.squeeze()
+            self.X, self.y = self._load_ucirepo("OnlineNewsPopularity", data_id=332)
+            self.y = self.y.squeeze()
             self.minmax_normalize()
 
 
@@ -1187,10 +1172,7 @@ class Parkinsons1(Dataset):
 
     def load_dataset(self):
         if self.X is None or self.y is None:
-            dataset = fetch_ucirepo(id=189)
-
-            self.X = dataset.data.features
-            self.y = dataset.data.targets
+            self.X, self.y = self._load_ucirepo("Parkinsons", data_id=189)
             self.y = self.y['motor_UPDRS'].squeeze()
             self.minmax_normalize()
 
@@ -1201,10 +1183,7 @@ class Parkinsons2(Dataset):
 
     def load_dataset(self):
         if self.X is None or self.y is None:
-            dataset = fetch_ucirepo(id=189)
-
-            self.X = dataset.data.features
-            self.y = dataset.data.targets
+            self.X, self.y = self._load_ucirepo("Parkinsons", data_id=189)
             self.y = self.y['total_UPDRS'].squeeze()
             self.minmax_normalize()
 
@@ -1215,10 +1194,8 @@ class RealEstateValuation(Dataset):
 
     def load_dataset(self):
         if self.X is None or self.y is None:
-            dataset = fetch_ucirepo(id=477)
-
-            self.X = dataset.data.features
-            self.y = dataset.data.targets.squeeze()
+            self.X, self.y = self._load_ucirepo("RealEstateValuation", data_id=477)
+            self.y = self.y.squeeze()
             self.minmax_normalize()
 
 
@@ -1228,11 +1205,9 @@ class Servo(Dataset):
 
     def load_dataset(self):
         if self.X is None or self.y is None:
-            dataset = fetch_ucirepo(id=87)
-
-            self.X = dataset.data.features
+            self.X, self.y = self._load_ucirepo("Servo", data_id=87)
+            self.y = self.y.squeeze()
             self.encode_object_types()
-            self.y = dataset.data.targets.squeeze()
             self.minmax_normalize()
 
 
@@ -1242,8 +1217,7 @@ class WineQuality(Dataset):
 
     def load_dataset(self):
         if self.X is None or self.y is None:
-            wine_quality = fetch_ucirepo(id=186)
-            self.X = wine_quality.data.features
-            self.y = wine_quality.data.targets.squeeze()
+            self.X, self.y = self._load_ucirepo("WineQuality", data_id=186)
+            self.y = self.y.squeeze()
             self.minmax_normalize()
 
