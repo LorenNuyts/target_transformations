@@ -17,9 +17,8 @@ base = os.path.dirname(os.path.realpath(__file__))
 DEFAULT_CLF = GradientBoostingRegressorWrapper(SEED)
 
 
-def run(data: Dataset, normalize_y=False, quantile=False, clf=DEFAULT_CLF):
-    clf_name = (f"{clf.name}{'__normalized' if normalize_y and not quantile else ''}"
-                f"{'__quantile' if quantile else ''}")
+def run(data: Dataset, normalize_y=False, clf=DEFAULT_CLF):
+    clf_name = f"{clf.name}{'__normalized' if normalize_y else ''}"
     results = load_results(base, dataset_, suffix=suffix, reset=False)
     if clf_name not in results:
         results[clf_name] = {}
@@ -39,64 +38,12 @@ def run(data: Dataset, normalize_y=False, quantile=False, clf=DEFAULT_CLF):
             results[clf_name][i] = {}
         # print(f"Fold {i}:")
         data.cross_validation(train_index, test_index, force=True)
-        data.split_validation_set()
-        if data.missing_values:
-            data.impute_missing_values()
-        if normalize_y and not quantile:
-            data.normalize_y()
-        elif normalize_y and quantile:
-            data.normalize_quantile_y()
 
-        clf = copy.deepcopy(clf)
-
-        if "LassoTuned" in clf_name or "RidgeRegressionTuned" in clf_name:
-            do_alpha_search(clf, data)
-        else:
-            no_alpha_search(clf, data)
-        predictions = clf.predict(data.Xtest)
-        if normalize_y and not quantile:
-            # transformed_pred = data.other_params["ytrain_mean"] + predictions * data.other_params["ytrain_std"]
-            # score *= (data.y.max() - data.y.min())
-            # score = root_mean_squared_error(data.ytest, transformed_pred)
-            score = root_mean_squared_error(data.ytest, predictions)
-            score *= data.other_params["ytrain_std"]
-        elif normalize_y and quantile:
-            transformed_pred = data.other_params['quantile_transformer'].inverse_transform(predictions.reshape(-1, 1)).ravel()
-            # score *= (data.y.max() - data.y.min())
-            score = root_mean_squared_error(data.ytest, transformed_pred)
-        else:
-            score = root_mean_squared_error(data.ytest, predictions)
-        all_scores.append(score)
-        results[clf_name][i] = {Keys.clf: clf, Keys.rmse: score}
-
-    if len(all_scores) == 10:
-        print(f"Average RMSE {'normalized' if normalize_y else ''}:", np.mean(all_scores))
-        results[clf_name].update({Keys.average_rmse: np.mean(all_scores),
-                                  Keys.std_rmse: np.std(all_scores)})
-        save_results(results, base, dataset_, suffix=suffix)
-    # print_results(results)
-
-
-def do_alpha_search(clf, data):
-    alpha_search = AlphaSearch()
-    for alpha_record in alpha_search:
-        clf.update_lin_clf_alpha(alpha_record.alpha)
-        clf.fit_coefficients(data, alpha_record)
-
-    best_record = alpha_search.get_best_record()
-    clf.clf.intercept_ = best_record.intercept
-    clf.clf.coef_ = best_record.coefs
-
-
-def no_alpha_search(clf, data):
-    clf.fit(data.Xtrain, data.ytrain)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('dataset', type=str)
-    # parser.add_argument('--series_fusion', action='store_true')
-    # parser.add_argument("--auc", type=float, nargs="?", default=default_auc_percentage)
     parser.add_argument("--suffix", type=str, nargs="?", default="")
     args = parser.parse_args()
     dataset_ = args.dataset
@@ -130,9 +77,7 @@ if __name__ == '__main__':
             print(f"Running {dataset_}...")
             run(datasets[dataset_], normalize_y=False)
             run(datasets[dataset_], normalize_y=True)
-            run(datasets[dataset_], normalize_y=True, quantile=True)
         print_all_results_excel(all_datasets, Keys.average_rmse, base, suffix=suffix)
     else:
         run(datasets[dataset_.lower()], normalize_y=False)
         run(datasets[dataset_.lower()], normalize_y=True)
-        run(datasets[dataset_.lower()], normalize_y=True, quantile=True)

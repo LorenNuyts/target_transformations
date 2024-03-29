@@ -11,6 +11,7 @@ import time
 import sklearn.metrics as metrics
 from sklearn import preprocessing
 from sklearn.datasets import fetch_openml
+from sklearn.preprocessing import QuantileTransformer
 # from sklearn.datasets import fetch_openml
 # from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 # from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
@@ -25,6 +26,7 @@ from data.utils import SEED
 
 # MODEL_DIR = os.environ["MODEL_DIR"]
 DATA_DIR = os.environ["DATA_DIR"]
+# DATA_DIR = "/home/loren/Code/Evaluation/data/datasets/"
 NTHREADS = os.cpu_count()
 
 
@@ -419,6 +421,21 @@ class Dataset:
 
         self.other_params["ytrain_mean"] = ytrain_mean
         self.other_params["ytrain_std"] = ytrain_std
+
+    def normalize_quantile_y(self):
+        if self.y is None:
+            raise RuntimeError("data not loaded")
+        if self.ytrain is None or self.ytest is None:
+            raise RuntimeError("train and test sets not loaded")
+
+        qt = QuantileTransformer(n_quantiles=10, random_state=0)
+
+        self.ytrain = qt.fit_transform(self.ytrain.values.reshape(-1, 1)).ravel()
+        if self.yval is not None:
+            self.yval = qt.transform(self.yval.values.reshape(-1, 1)).ravel()
+        # self.ytest = qt.transform(self.ytest.values.reshape(-1, 1)).ravel()
+
+        self.other_params["quantile_transformer"] = qt
 
     def discretize(self, nb_bins: int = 10, mode: str = "equal_width") -> None:
         """

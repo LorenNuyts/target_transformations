@@ -122,7 +122,7 @@ def print_all_results_excel(datasets: List[str], metric: str, base: str, suffix:
     for i, method in enumerate(all_results.keys()):
         values[method] = all_results[method]
 
-    #Transform values to excel format such that I can copy paste them in excel
+    # Transform values to excel format such that I can copy paste them in excel
     print(values.to_csv(sep='\t'))
 
     # print(values)
