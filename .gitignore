@@ -2,6 +2,7 @@
 /experiments/results/
 /.venv/
 /.idea/
+/experiments/plots/results/
 
 data/__pycache__/
 
