@@ -5,6 +5,7 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.model_selection import RepeatedStratifiedKFold, RepeatedKFold
 
 from data import *
+from experiments.plots import plot_distribution_y
 from experiments.utils import load_results, save_results, print_all_results_excel
 from experiments.utils.constants import *
 from experiments.utils.alpha_search import AlphaSearch
@@ -12,32 +13,22 @@ from experiments.utils.classifiers import *
 
 base = os.path.dirname(os.path.realpath(__file__))
 
-# DEFAULT_CLF = LassoTuned(SEED)
-# DEFAULT_CLF = RidgeRegressionTuned(SEED)
-DEFAULT_CLF = GradientBoostingRegressorWrapper(SEED)
 
-
-def run(data: Dataset, normalize_y=False, clf=DEFAULT_CLF):
-    clf_name = f"{clf.name}{'__normalized' if normalize_y else ''}"
-    results = load_results(base, dataset_, suffix=suffix, reset=False)
-    if clf_name not in results:
-        results[clf_name] = {}
-
+def run(data: Dataset, normalize_y=False, quantile=False):
     data.load_dataset()
+    results_dir = os.path.join(base, "results")
+    plot_distribution_y(data.y, f"{data.name()}: Entire dataset",
+                        save_path=os.path.join(results_dir, f"{data.name()}_distribution.png"))
 
     if data.task == Task.REGRESSION:
         rskf = RepeatedKFold(n_splits=2, n_repeats=5, random_state=SEED)
     else:
         rskf = RepeatedStratifiedKFold(n_splits=2, n_repeats=5, random_state=SEED)
-    all_scores = []
     for i, (train_index, test_index) in enumerate(rskf.split(data.X, data.y)):
-        if i in results[clf_name].keys():
-            print(f"Fold {i} already in results, skipping...")
-            continue
-        else:
-            results[clf_name][i] = {}
-        # print(f"Fold {i}:")
         data.cross_validation(train_index, test_index, force=True)
+
+        plot_distribution_y(data.ytrain, f"{data.name()}: Train fold {i}",
+                            save_path=os.path.join(results_dir, f"{data.name()}_train_fold_{i}_distribution.png"))
 
 
 
@@ -76,8 +67,5 @@ if __name__ == '__main__':
         for dataset_ in all_datasets:
             print(f"Running {dataset_}...")
             run(datasets[dataset_], normalize_y=False)
-            run(datasets[dataset_], normalize_y=True)
-        print_all_results_excel(all_datasets, Keys.average_rmse, base, suffix=suffix)
     else:
         run(datasets[dataset_.lower()], normalize_y=False)
-        run(datasets[dataset_.lower()], normalize_y=True)
