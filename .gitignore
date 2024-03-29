@@ -2,3 +2,7 @@
 /experiments/results/
 /.venv/
 /.idea/
+
+data/__pycache__/
+
+experiments/results2/
