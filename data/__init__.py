@@ -422,20 +422,17 @@ class Dataset:
         self.other_params["ytrain_mean"] = ytrain_mean
         self.other_params["ytrain_std"] = ytrain_std
 
-    def normalize_quantile_y(self):
+    def transform_target_custom(self, transformer):
         if self.y is None:
             raise RuntimeError("data not loaded")
         if self.ytrain is None or self.ytest is None:
             raise RuntimeError("train and test sets not loaded")
 
-        qt = QuantileTransformer(n_quantiles=10, random_state=0)
-
-        self.ytrain = qt.fit_transform(self.ytrain.values.reshape(-1, 1)).ravel()
+        self.ytrain = transformer.fit_transform(self.ytrain.values.reshape(-1, 1)).ravel()
         if self.yval is not None:
-            self.yval = qt.transform(self.yval.values.reshape(-1, 1)).ravel()
-        # self.ytest = qt.transform(self.ytest.values.reshape(-1, 1)).ravel()
-
-        self.other_params["quantile_transformer"] = qt
+            self.yval = transformer.transform(self.yval.values.reshape(-1, 1)).ravel()
+        # self.ytest = transformer.transform(self.ytest.values.reshape(-1, 1)).ravel()
+        self.other_params["target_transformer"] = transformer
 
     def discretize(self, nb_bins: int = 10, mode: str = "equal_width") -> None:
         """

@@ -9,4 +9,8 @@ class Keys:
     average_rmse = "average RMSE"
     std_rmse = "std RMSE"
 
+    nrmse = "NRMSE"
+    average_nrmse = "average NRMSE"
+    std_nrmse = "std NRMSE"
+
     clf = "clf"
