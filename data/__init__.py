@@ -422,6 +422,17 @@ class Dataset:
         self.other_params["ytrain_mean"] = ytrain_mean
         self.other_params["ytrain_std"] = ytrain_std
 
+    # def log_transform_target(self):
+    #     if self.y is None:
+    #         raise RuntimeError("data not loaded")
+    #     if self.ytrain is None or self.ytest is None:
+    #         raise RuntimeError("train and test sets not loaded")
+    #
+    #     self.ytrain = np.log(self.ytrain)
+    #     if self.yval is not None:
+    #         self.yval = np.log(self.yval)
+    #     # self.ytest = np.log(self.ytest)
+
     def transform_target_custom(self, transformer):
         if self.y is None:
             raise RuntimeError("data not loaded")

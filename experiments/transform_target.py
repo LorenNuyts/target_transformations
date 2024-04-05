@@ -7,6 +7,7 @@ from sklearn.model_selection import RepeatedStratifiedKFold, RepeatedKFold
 from sklearn.preprocessing import RobustScaler, PowerTransformer
 
 from data import *
+from eval_method.src.transform_target import LogTransformer
 from experiments.utils import load_results, save_results, print_all_results_excel
 from experiments.utils.constants import *
 from experiments.utils.alpha_search import AlphaSearch
@@ -22,13 +23,14 @@ DEFAULT_CLFS = [
 
 
 def run(data: Dataset, normalize_y=False, quantile=False, custom=False, clf=DEFAULT_CLFS[0]):
+    results = load_results(base, dataset_, suffix=suffix, reset=False)
     clf_name = (f"{clf.name}{'__normalized' if normalize_y else ''}"
                 f"{'__quantile_uniform' if quantile else ''}"
                 # f"{'__quantile_normal' if custom else ''}"
                 # f"{'__robust_scaler' if custom else ''}"
-                f"{'__power_transformer' if custom else ''}"
+                # f"{'__power_transformer' if custom else ''}"
+                f"{'__ln' if custom else ''}"
                 )
-    results = load_results(base, dataset_, suffix=suffix, reset=False)
     if clf_name not in results:
         results[clf_name] = {}
 
@@ -60,7 +62,9 @@ def run(data: Dataset, normalize_y=False, quantile=False, custom=False, clf=DEFA
             else:
                 # transformer = QuantileTransformer(n_quantiles=10, random_state=0, output_distribution='normal')
                 # transformer = RobustScaler()
-                transformer = PowerTransformer()
+                # transformer = PowerTransformer()
+                # transformer = LogTransformer(base=10)
+                transformer = LogTransformer(base=np.e)
             data.transform_target_custom(transformer)
 
         clf = copy.deepcopy(clf)
