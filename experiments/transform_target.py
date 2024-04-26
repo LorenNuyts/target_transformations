@@ -2,12 +2,14 @@ import argparse
 import copy
 import warnings
 
+import pandas as pd
 import scipy
 from sklearn.model_selection import RepeatedStratifiedKFold, RepeatedKFold
 from sklearn.preprocessing import RobustScaler, PowerTransformer
 
 from data import *
 from eval_method.src.transform_target import LogTransformer
+from experiments.plots import plot_distribution_y
 from experiments.utils import load_results, save_results, print_all_results_excel
 from experiments.utils.constants import *
 from experiments.utils.alpha_search import AlphaSearch
@@ -42,6 +44,7 @@ def run(data: Dataset, normalize_y=False, quantile=False, custom=False, clf=DEFA
         rskf = RepeatedStratifiedKFold(n_splits=2, n_repeats=5, random_state=SEED)
     all_rmse = []
     all_nrmse = []
+    error_bars = []
 
     for i, (train_index, test_index) in enumerate(rskf.split(data.X, data.y)):
         if i in results[clf_name].keys():
@@ -74,6 +77,7 @@ def run(data: Dataset, normalize_y=False, quantile=False, custom=False, clf=DEFA
         else:
             no_alpha_search(clf, data)
         predictions = clf.predict(data.Xtest)
+        error_bars.append(data.ytest - predictions)
         if normalize_y:
             # transformed_pred = data.other_params["ytrain_mean"] + predictions * data.other_params["ytrain_std"]
             # score *= (data.y.max() - data.y.min())
@@ -102,7 +106,10 @@ def run(data: Dataset, normalize_y=False, quantile=False, custom=False, clf=DEFA
         # nrmse = scipy.stats.variation(ytest)
         all_nrmse.append(nrmse)
 
-        results[clf_name][i] = {Keys.clf: clf, Keys.rmse: score, Keys.nrmse: nrmse}
+        results[clf_name][i] = {Keys.clf: clf,
+                                Keys.predictions: predictions,
+                                Keys.rmse: score,
+                                Keys.nrmse: nrmse}
 
     if len(all_rmse) == 10:
         print(f"Average RMSE {'normalized' if normalize_y else ''}:", np.mean(all_rmse))
@@ -110,8 +117,22 @@ def run(data: Dataset, normalize_y=False, quantile=False, custom=False, clf=DEFA
                                   Keys.std_rmse: np.std(all_rmse)})
         results[clf_name].update({Keys.average_nrmse: np.mean(all_nrmse),
                                   Keys.std_nrmse: np.std(all_nrmse)})
+        if plot_error_bars:
+            absolute_errors = [np.abs(error_bars[i]) for i in range(len(error_bars))]
+            df_error = pd.DataFrame(absolute_errors).transpose()
+            average_error = df_error.mean(axis=1)
+            # df_error_bars = pd.DataFrame(index=data.y.index, columns=range(len(error_bars)//2))
+            # for i in data.y.index:
+            #     not_nans = df.loc[i].dropna()
+            #     df_error_bars.loc[i] = not_nans.values
+            title = f"Error bars for {dataset_} - {clf_name}"
+            x_label = "Absolute error"
+            save_path = os.path.join(base, f"plots/results/{dataset_}/{clf_name}_error_bars.png")
+
+            plot_distribution_y(average_error.values, title, save_path, x_label)
         save_results(results, base, dataset_, suffix=suffix)
     # print_results(results)
+
 
 
 def do_alpha_search(clf, data):
@@ -132,7 +153,7 @@ def no_alpha_search(clf, data):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('dataset', type=str)
-    # parser.add_argument('--series_fusion', action='store_true')
+    parser.add_argument('--plot_error', action='store_true')
     # parser.add_argument("--auc", type=float, nargs="?", default=default_auc_percentage)
     parser.add_argument("--suffix", type=str, nargs="?", default="")
     args = parser.parse_args()
@@ -161,6 +182,7 @@ if __name__ == '__main__':
                 }
 
     all_datasets = list(datasets.keys())
+    plot_error_bars = args.plot_error
 
     for clf_ in DEFAULT_CLFS:
         if dataset_ == 'all':

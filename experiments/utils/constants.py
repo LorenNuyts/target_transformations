@@ -14,3 +14,6 @@ class Keys:
     std_nrmse = "std NRMSE"
 
     clf = "clf"
+    predictions = "predictions"
+    average_predictions = "average predictions"
+    std_predictions = "std predictions"
