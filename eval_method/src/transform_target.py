@@ -3,15 +3,31 @@ import pandas as pd
 from sklearn.base import TransformerMixin
 
 
-def normalize_y(y_train: pd.Series, yval, ytest) -> (pd.Series, pd.Series, pd.Series):
-    y_train_mean = y_train.mean()
-    y_train_std = y_train.std()
+class NormalizeTransformer(TransformerMixin):
+    def __init__(self):
+        self.mean = None
+        self.std = None
 
-    y_train_normalized = (y_train - y_train_mean) / y_train_std
-    yval_normalized = (yval - y_train_mean) / y_train_std
-    ytest_normalized = (ytest - y_train_mean) / y_train_std
+    def fit(self, X, y=None):
+        self.mean = X.mean()
+        self.std = X.std()
+        return self
 
-    return y_train_normalized, yval_normalized, ytest_normalized
+    def transform(self, X):
+        return (X - self.mean) / self.std
+
+    def inverse_transform(self, X):
+        return X * self.std + self.mean
+
+# def normalize_y(y_train: pd.Series, yval, ytest) -> (pd.Series, pd.Series, pd.Series):
+#     y_train_mean = y_train.mean()
+#     y_train_std = y_train.std()
+#
+#     y_train_normalized = (y_train - y_train_mean) / y_train_std
+#     yval_normalized = (yval - y_train_mean) / y_train_std
+#     ytest_normalized = (ytest - y_train_mean) / y_train_std
+#
+#     return y_train_normalized, yval_normalized, ytest_normalized
 
 
 class LogTransformer(TransformerMixin):

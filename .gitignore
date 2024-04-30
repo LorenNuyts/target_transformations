@@ -8,3 +8,13 @@ data/__pycache__/
 
 experiments/results2/
 /experiments/results3/
+
+experiments/__pycache__/
+
+experiments/results1/
+
+experiments/plots/__pycache__/
+
+experiments/utils/__pycache__/
+
+eval_method/src/__pycache__/

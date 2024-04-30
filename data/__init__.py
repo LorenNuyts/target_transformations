@@ -405,22 +405,22 @@ class Dataset:
         le = preprocessing.LabelEncoder()
         self.y = pd.Series(le.fit_transform(self.y.values.ravel()), index=self.y.index)
 
-    def normalize_y(self):
-        if self.y is None:
-            raise RuntimeError("data not loaded")
-        if self.ytrain is None or self.ytest is None:
-            raise RuntimeError("train and test sets not loaded")
-
-        ytrain_mean = self.ytrain.mean()
-        ytrain_std = self.ytrain.std()
-
-        self.ytrain = (self.ytrain - ytrain_mean) / ytrain_std
-        if self.yval is not None:
-            self.yval = (self.yval - ytrain_mean) / ytrain_std
-        self.ytest = (self.ytest - ytrain_mean) / ytrain_std
-
-        self.other_params["ytrain_mean"] = ytrain_mean
-        self.other_params["ytrain_std"] = ytrain_std
+    # def normalize_y(self):
+    #     if self.y is None:
+    #         raise RuntimeError("data not loaded")
+    #     if self.ytrain is None or self.ytest is None:
+    #         raise RuntimeError("train and test sets not loaded")
+    #
+    #     ytrain_mean = self.ytrain.mean()
+    #     ytrain_std = self.ytrain.std()
+    #
+    #     self.ytrain = (self.ytrain - ytrain_mean) / ytrain_std
+    #     if self.yval is not None:
+    #         self.yval = (self.yval - ytrain_mean) / ytrain_std
+    #     self.ytest = (self.ytest - ytrain_mean) / ytrain_std
+    #
+    #     self.other_params["ytrain_mean"] = ytrain_mean
+    #     self.other_params["ytrain_std"] = ytrain_std
 
     # def log_transform_target(self):
     #     if self.y is None:

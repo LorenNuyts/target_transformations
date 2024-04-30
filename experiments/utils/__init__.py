@@ -187,7 +187,7 @@ def write_to_textio(results: dict, f: TextIO, prefix: str = "", exclude: List[st
 
 # \Section: Project specific
 # Exclude uninformative items from txt file
-exclude_txt = [Keys.clf]
+exclude_txt = [Keys.clf, Keys.average_error, Keys.std_error]
 
 
 def get_file_name_base(dataset_name, suffix=None):
@@ -208,6 +208,25 @@ def get_file_name_base(dataset_name, suffix=None):
     """
     return f'{dataset_name}' \
            f'{suffix}'
+
+
+def get_clf_full_name(clf, target_transformer_name=None):
+    """
+    Get the full name of a classifier
+
+    Parameters
+    ----------
+    clf
+        Classifier
+    target_transformer_name: str, optional, default None
+        Name of the target transformer
+
+    Returns
+    -------
+    str
+        Full name of the classifier
+    """
+    return f"{clf.name}{'__' + target_transformer_name if target_transformer_name is not None else ''}"
 
 
 def get_paths(base, dataset_name, suffix=None):
