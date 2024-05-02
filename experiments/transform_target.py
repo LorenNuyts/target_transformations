@@ -184,6 +184,7 @@ if __name__ == '__main__':
                 "realestatevaluation": RealEstateValuation,
                 "servo": Servo,
                 "winequality": WineQuality,
+                "youtubeviewcount": YouTubeViewCount,
                 }
 
     all_datasets = list(datasets.keys())
@@ -204,13 +205,13 @@ if __name__ == '__main__':
             dataset_ = 'all'
         else:
             run(datasets[dataset_.lower()](), clf=clf_)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_normalized)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_uniform)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_normal)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_robustscaler)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_powertransformer)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_logtransformer)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_lntransformer)
+            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_normalized)
+            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_uniform)
+            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_normal)
+            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_robustscaler)
+            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_powertransformer)
+            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_logtransformer)
+            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_lntransformer)
 
     if dataset_ == 'all':
         print("RMSE:")

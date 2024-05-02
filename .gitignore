@@ -18,3 +18,5 @@ experiments/plots/__pycache__/
 experiments/utils/__pycache__/
 
 eval_method/src/__pycache__/
+
+data/raw_data/data/

@@ -1,3 +1,4 @@
+import math
 import operator
 import os.path
 
@@ -72,17 +73,70 @@ def plot_multiple_y(x, ys: list, x_label, ylabels: list, title="", save_name=Non
     plt.legend()
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
     if save_name is not None:
-        fig.savefig(f'{save_name}.jpg')
+        fig.savefig(f'{save_name}.png')
     else:
         plt.show()
 
 
+def plot_multiple_with_fill(x, means, lower, upper, labels, x_label=None, y_label=None, title=None, save_name=None):
+    # ('solid', 'solid'),  # Same as (0, ()) or '-'
+    # ('dotted', 'dotted'),  # Same as (0, (1, 1)) or ':'
+    # ('dashed', 'dashed'),  # Same as '--'
+    # ('dashdot', 'dashdot')]  # Same as '-.'
+    #
+    # linestyle_tuple = [
+    # ('loosely dotted', (0, (1, 10))),
+    # ('dotted', (0, (1, 1))),
+    # ('densely dotted', (0, (1, 1))),
+    # ('long dash with offset', (5, (10, 3))),
+    # ('loosely dashed', (0, (5, 10))),
+    # ('dashed', (0, (5, 5))),
+    # ('densely dashed', (0, (5, 1))),
+    #
+    # ('loosely dashdotted', (0, (3, 10, 1, 10))),
+    # ('dashdotted', (0, (3, 5, 1, 5))),
+    # ('densely dashdotted', (0, (3, 1, 1, 1))),
+    #
+    # ('dashdotdotted', (0, (3, 5, 1, 5, 1, 5))),
+    # ('loosely dashdotdotted', (0, (3, 10, 1, 10, 1, 10))),
+    # ('densely dashdotdotted', (0, (3, 1, 1, 1, 1, 1)))]
+    linestyles = ['-', ':', '--', '-.',  (0, (3, 5, 1, 5, 1, 5)), (0, (5, 3)), (0, (5, 10)), (0, (5, 1)),
+                  (0, (3, 10, 1, 10)), (0, (3, 1, 1, 1)), (0, (3, 10, 1, 10, 1, 10)), (0, (3, 1, 1, 1, 1, 1))]
+
+    fig, ax = plt.subplots()
+
+    for i in range(len(means)):
+        ax.plot(x, means[i], label=labels[i], linestyle=linestyles[i % len(linestyles)])
+        ax.fill_between(x, lower[i], upper[i], alpha=0.2)
+
+    if x_label is not None:
+        ax.set_xlabel(x_label)
+    if y_label is not None:
+        ax.set_ylabel(y_label)
+    if title is not None:
+        ax.set_title(title)
+    plt.legend()
+    if save_name is not None:
+        if not os.path.exists(os.path.dirname(save_name)):
+            os.makedirs(os.path.dirname(save_name))
+        fig.savefig(f'{save_name}.png')
+    else:
+        plt.show()
+    plt.close()
+
+
 def plot_error_bars(y, dataset_name: str, included_transformers: list, clf=DEFAULT_CLFS[1],
-                    suffix=""):
+                    suffix="", latex=False, nb_tr_per_plot=6):
+    plots_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "results/error_distribution")
     base = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
     results = load_results(base, dataset_name, suffix=suffix, reset=False)
+    xrange = None
+    all_means = []
+    all_upper = []
+    all_lower = []
+    labels = []
 
-    for tr in included_transformers:
+    for tr_i, tr in enumerate(included_transformers):
         clf_name = get_clf_full_name(clf, tr)
         errors = []
         for fold in results[clf_name].keys():
@@ -90,11 +144,6 @@ def plot_error_bars(y, dataset_name: str, included_transformers: list, clf=DEFAU
                 errors.append(results[clf_name][fold][Keys.error])
         absolute_errors = [np.abs(errors[i]) for i in range(len(errors))]
         df_error = pd.DataFrame(absolute_errors).transpose()
-        # average_error = df_error.mean(axis=1)
-        # df_error_short = pd.DataFrame(index=y.index, columns=range(len(errors)//2))
-        # for i in y.index:
-        #     not_nans = df_error.loc[i].dropna()
-        #     df_error_short.loc[i] = not_nans.values
 
         error_distribution = {y[index]: (np.nanmean(error_folds), np.nanquantile(error_folds, 0.25),
                                          np.nanquantile(error_folds, 0.75))
@@ -111,8 +160,30 @@ def plot_error_bars(y, dataset_name: str, included_transformers: list, clf=DEFAU
             upper.append(values[2])
             xrange.append(x)
 
-        print("Transformation: ", tr)
-        print("means: \n", pretty_print(xrange, means), "\n")
-        print("upper: \n", pretty_print(xrange, upper), "\n")
-        print("lower: \n", pretty_print(xrange, lower), "\n")
-    print("\n\n")
+        if latex:
+            print("Transformation: ", tr)
+            print("means: \n", pretty_print(xrange, means), "\n")
+            print("upper: \n", pretty_print(xrange, upper), "\n")
+            print("lower: \n", pretty_print(xrange, lower), "\n")
+        else:
+            all_means.append(means)
+            all_upper.append(upper)
+            all_lower.append(lower)
+            labels.append(tr if tr is not None else "No transformation")
+
+            # if tr_i % nb_tr_per_plot == 0 or tr_i == len(included_transformers) - 1:
+            #     plot_multiple_with_fill(xrange, all_means, all_lower, all_upper, labels,
+            #                             "Target value", "Absolute error",
+            #                             save_name=os.path.join(plots_dir, f"{dataset_name}_{math.ceil(tr_i / nb_tr_per_plot)}"))
+            #     all_means = []
+            #     all_upper = []
+            #     all_lower = []
+            #     labels = []
+
+    if latex:
+        print("\n\n")
+
+    plot_multiple_with_fill(xrange, all_means, all_lower, all_upper, labels,
+                            "Target value", "Absolute error",
+                            save_name=os.path.join(plots_dir, f"{dataset_name}"),
+                            title=f"Absolute error distribution for {dataset_name}")

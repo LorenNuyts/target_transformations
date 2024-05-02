@@ -28,6 +28,7 @@ from data.utils import SEED
 DATA_DIR = os.environ["DATA_DIR"]
 # DATA_DIR = "/home/loren/Code/Evaluation/data/datasets/"
 NTHREADS = os.cpu_count()
+base_path = os.path.dirname(os.path.abspath(__file__))
 
 
 class Task(enum.Enum):
@@ -198,178 +199,6 @@ class Dataset:
         y = pd.read_hdf(f"{self.data_dir}/{name}.h5", key="y")
 
         return X, y
-
-    # def _get_xgb_model(self, num_trees, tree_depth, model_cmp, metric_name, custom_params=None, naming_args=None):
-    #     if naming_args is None:
-    #         naming_args = {}
-    #     if custom_params is None:
-    #         custom_params = {}
-    #
-    #     model_name = self.get_model_name("xgb", num_trees, tree_depth, naming_args=naming_args)
-    #     model_path = os.path.join(self.model_dir, model_name)
-    #     if os.path.isfile(model_path):
-    #         print(f"loading XGB model from file: {model_name}")
-    #         model, meta = joblib.load(model_path)
-    #     else:  # train model
-    #         self.load_dataset()
-    #         self.train_and_test_set()
-    #
-    #         self.dtrain = xgb.DMatrix(self.Xtrain, self.ytrain, missing=None)
-    #         self.dtest = xgb.DMatrix(self.Xtest, self.ytest, missing=None)
-    #
-    #         params = self.xgb_params(self.task, custom_params)
-    #         params["max_depth"] = tree_depth
-    #
-    #         # Looking for best learning rate
-    #         best_metric, best_model, best_lr = None, None, None
-    #         for lr in np.linspace(0, 1, 5)[1:]:
-    #             print("(1) LEARNING_RATE =", lr)
-    #             params["learning_rate"] = lr
-    #             model = xgb.train(params, self.dtrain, num_boost_round=num_trees,
-    #                               evals=[(self.dtrain, "train"), (self.dtest, "test")])
-    #             metric = model_cmp(model, best_metric)
-    #             if metric != best_metric:
-    #                 best_metric, best_model, best_lr = metric, model, lr
-    #
-    #         for lr in np.linspace(best_lr - 0.25, best_lr + 0.25, 7)[1:-1]:
-    #             if lr <= 0.0 or lr >= 1.0: continue
-    #             if lr in np.linspace(0, 1, 5)[1:]: continue
-    #             print("(2) LEARNING_RATE =", lr)
-    #             params["learning_rate"] = lr
-    #             model = xgb.train(params, self.dtrain, num_boost_round=num_trees,
-    #                               evals=[(self.dtrain, "train"), (self.dtest, "test")])
-    #             metric = model_cmp(model, best_metric)
-    #             if metric != best_metric:
-    #                 best_metric, best_model, best_lr = metric, model, lr
-    #         print(f"(*) best metric = {best_metric} for lr = {best_lr}")
-    #
-    #         model = best_model
-    #         params["num_trees"] = num_trees
-    #         meta = {
-    #             "params": params,
-    #             "num_trees": num_trees,
-    #             "tree_depth": tree_depth,
-    #             "columns": self.X.columns,
-    #             "task": self.task,
-    #             "metric": (metric_name, best_metric),
-    #             "lr": best_lr,
-    #         }
-    #         joblib.dump((best_model, meta), model_path)
-    #
-    #         del self.dtrain
-    #         del self.dtest
-    #
-    #     return model, meta
-    #
-    # def get_xgb_model(self, num_trees, tree_depth, naming_args):
-    #     # call _get_xgb_model with model comparison for lr optimization
-    #     raise RuntimeError("override in subclass")
-    #
-    # def get_rf_model(self, num_trees, tree_depth, seed=SEED, naming_args=None, force_new=False):
-    #     if naming_args is None:
-    #         naming_args = {"seed": seed}
-    #     else:
-    #         naming_args["seed"] = seed
-    #     model_name = self.get_model_name("rf", num_trees, tree_depth, naming_args)
-    #     model_path = os.path.join(self.model_dir, model_name)
-    #     if not force_new and os.path.isfile(model_path):
-    #         # print(f"loading RF model from file: {model_name}")
-    #         model, meta = joblib.load(model_path)
-    #     else:
-    #         self.load_dataset()
-    #         self.train_and_test_set()
-    #
-    #         custom_params = {
-    #             "n_estimators": num_trees,
-    #             "max_depth": tree_depth,
-    #         }
-    #         params = self.rf_params(custom_params)
-    #
-    #         if self.task == Task.REGRESSION:
-    #             model = RandomForestRegressor(random_state=seed, **params)
-    #             model.fit(self.Xtrain, self.ytrain)
-    #             metric = metrics.mean_squared_error(model.predict(self.Xtest), self.ytest)
-    #             metric = np.sqrt(metric)
-    #             metric_name = "rmse"
-    #         else:
-    #             model = RandomForestClassifier(**params)
-    #             model.fit(self.Xtrain, self.ytrain)
-    #             metric = metrics.accuracy_score(model.predict(self.Xtest), self.ytest)
-    #             metric_name = "acc"
-    #
-    #         meta = {
-    #             "params": params,
-    #             "num_trees": num_trees,
-    #             "tree_depth": tree_depth,
-    #             "columns": self.X.columns,
-    #             "task": self.task,
-    #             "metric": (metric_name, metric),
-    #         }
-    #         if not force_new:
-    #             joblib.dump((model, meta), model_path)
-    #     return model, meta
-    #
-    # def get_extra_trees_model(self, num_trees, tree_depth):
-    #     model_name = self.get_model_name("et", num_trees, tree_depth, naming_args={})
-    #     model_path = os.path.join(self.model_dir, model_name)
-    #     if os.path.isfile(model_path):
-    #         print(f"loading ExtraTrees from file: {model_name}")
-    #         model, meta = joblib.load(model_path)
-    #     else:
-    #         self.load_dataset()
-    #         self.train_and_test_set()
-    #
-    #         custom_params = {
-    #             "n_estimators": num_trees,
-    #             "max_depth": tree_depth,
-    #             "random_state": 0,
-    #         }
-    #         params = self.extra_trees_params(custom_params)
-    #
-    #         if self.task == Task.REGRESSION:
-    #             model = ExtraTreesRegressor(**params)
-    #             model.fit(self.Xtrain, self.ytrain)
-    #             metric = metrics.mean_squared_error(model.predict(self.Xtest), self.ytest)
-    #             metric = np.sqrt(metric)
-    #             metric_name = "rmse"
-    #         else:
-    #             model = ExtraTreesClassifier(**params)
-    #             model.fit(self.Xtrain, self.ytrain)
-    #             metric = metrics.accuracy_score(model.predict(self.Xtest), self.ytest)
-    #             metric_name = "acc"
-    #         meta = {
-    #             "params": params,
-    #             "num_trees": num_trees,
-    #             "tree_depth": tree_depth,
-    #             "columns": self.X.columns,
-    #             "task": self.task,
-    #             "metric": (metric_name, metric),
-    #         }
-    #         joblib.dump((model, meta), model_path)
-    #     return model, meta
-    #
-    # def get_kdtree(self):
-    #     model_name = self.get_model_name("kdtree", 0, 0, naming_args={})
-    #     model_path = os.path.join(self.model_dir, model_name)
-    #     if os.path.isfile(model_path):
-    #         print(f"loading KDTree from file: {model_name}")
-    #         kdtree = joblib.load(model_path)
-    #     else:
-    #         self.load_dataset()
-    #         self.train_and_test_set()
-    #         kdtree = KDTree(self.Xtrain)
-    #         joblib.dump(kdtree, model_path)
-    #     return kdtree
-    #
-    # def get_model_name(self, model_type, num_trees, tree_depth, naming_args):
-    #     fold_suffix = "-" + str(naming_args.get("current_fold_nb")) + "of" + str(naming_args.get("max_fold")) if \
-    #         naming_args.get("max_fold", 0) != 0 else ""
-    #     discr_suffix = "-discretized_" + naming_args.get("binning_mode", "") + "_" + str(
-    #         naming_args.get("nb_bins")) if naming_args.get("discretized", False) else ""
-    #     seed = naming_args.get("seed", "")
-    #     attr_suffix = "-" + naming_args.get("attr_forest") if naming_args.get("attr_forest", False) else ""
-    #     return f"{self.name()}{self.name_suffix}-{num_trees}-{tree_depth}-{seed}{fold_suffix}{discr_suffix}" \
-    #            f"{attr_suffix}.{model_type}"
 
     def minmax_normalize(self):
         if self.X is None:
@@ -1246,3 +1075,17 @@ class WineQuality(Dataset):
             self.y = self.y.squeeze()
             self.minmax_normalize()
 
+
+class YouTubeViewCount(Dataset):
+    def __init__(self):
+        super().__init__(Task.REGRESSION)
+
+    def load_dataset(self):
+        if self.X is None or self.y is None:
+            print(f"loading youtube h5 file")
+            df = pd.read_hdf(f"{self.data_dir}/youtube.h5", key='dataset')
+
+            # noinspection PyUnresolvedReferences
+            self.y = df.pop('viewslg')
+            self.X = df
+            self.minmax_normalize()

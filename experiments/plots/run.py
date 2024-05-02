@@ -15,7 +15,7 @@ def plot_target_distribution(data: Dataset, target_transformer_name=None):
     if target_transformer_name is not None:
         transformer = get_transformer(target_transformer_name)
         y = transformer.fit_transform(data.y.values.reshape(-1, 1)).ravel()
-        plot_distribution_y(y, f"{data.name()}: Entire dataset ({target_transformer_name})",
+        plot_distribution_y(y, f"{data.name()}: {target_transformer_name}",
                             save_path=os.path.join(results_dir, dataset_,
                                                    f"{target_transformer_name}_distribution.png"))
     # if transformer == Keys.transformer_normalized:
@@ -113,7 +113,7 @@ if __name__ == '__main__':
                                                        Keys.transformer_quantile_normal,
                                                        # Keys.transformer_robustscaler,
                                                        Keys.transformer_powertransformer,
-                                                       Keys.transformer_logtransformer,
+                                                       # Keys.transformer_logtransformer,
                                                        Keys.transformer_lntransformer])
             sys.stdout.close()
         else:
@@ -125,5 +125,5 @@ if __name__ == '__main__':
                                                    Keys.transformer_quantile_normal,
                                                    # Keys.transformer_robustscaler,
                                                    Keys.transformer_powertransformer,
-                                                   Keys.transformer_logtransformer,
+                                                   # Keys.transformer_logtransformer,
                                                    Keys.transformer_lntransformer])
