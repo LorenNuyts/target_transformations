@@ -11,15 +11,7 @@ import time
 import sklearn.metrics as metrics
 from sklearn import preprocessing
 from sklearn.datasets import fetch_openml
-from sklearn.preprocessing import QuantileTransformer
-# from sklearn.datasets import fetch_openml
-# from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-# from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
-# from sklearn.neighbors import KDTree
-# from sklearn.preprocessing import LabelEncoder
-# from functools import partial
 
-# import xgboost as xgb
 from ucimlrepo import fetch_ucirepo
 
 from data.utils import SEED
@@ -1076,7 +1068,7 @@ class WineQuality(Dataset):
             self.minmax_normalize()
 
 
-class YouTubeViewCount(Dataset):
+class YouTube(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
 
@@ -1086,6 +1078,29 @@ class YouTubeViewCount(Dataset):
             df = pd.read_hdf(f"{self.data_dir}/youtube.h5", key='dataset')
 
             # noinspection PyUnresolvedReferences
-            self.y = df.pop('viewslg')
+            self.y = df.pop('views')
             self.X = df
             self.minmax_normalize()
+
+
+datasets = {"abalone": Abalone,
+            "autompg": AutoMPG,  # Missing values
+            # "bikesharing": BikeSharing, # Does not converge
+            "powerplant": CombinedCyclePowerPlant,
+            # "challenger": Challenger, # Does not converge
+            # "computerhardware": ComputerHardware, # What is the target?
+            "concrete": ConcreteCompressingStrength,
+            "energyefficiency1": EnergyEfficiency1,
+            "energyefficiency2": EnergyEfficiency2,
+            # "heartfailure": HeartFailure, # Classification
+            # "iris": Iris, # Classification
+            "liverdisorder": LiverDisorder,
+            # "obesity": Obesity(), # Classification
+            # "parkinsons1": Parkinsons1, # Does not converge
+            # "parkinsons2": Parkinsons2, # Does not converge
+            # "onlinenewspopularity": OnlineNewsPopularity, # Does not converge
+            "realestatevaluation": RealEstateValuation,
+            "servo": Servo,
+            "winequality": WineQuality,
+            "youtube": YouTube,
+            }

@@ -5,6 +5,7 @@ import warnings
 from sklearn.model_selection import RepeatedStratifiedKFold, RepeatedKFold
 
 from data import *
+from data import datasets
 from experiments.utils import load_results, save_results, print_all_results_excel, get_clf_full_name
 from experiments.utils.constants import *
 from experiments.utils.alpha_search import AlphaSearch
@@ -165,28 +166,6 @@ if __name__ == '__main__':
     dataset_ = args.dataset
     suffix = args.suffix
 
-    datasets = {"abalone": Abalone,
-                "autompg": AutoMPG,  # Missing values
-                # "bikesharing": BikeSharing, # Does not converge
-                "powerplant": CombinedCyclePowerPlant,
-                # "challenger": Challenger, # Does not converge
-                # "computerhardware": ComputerHardware, # What is the target?
-                "concrete": ConcreteCompressingStrength,
-                "energyefficiency1": EnergyEfficiency1,
-                "energyefficiency2": EnergyEfficiency2,
-                # "heartfailure": HeartFailure, # Classification
-                # "iris": Iris, # Classification
-                "liverdisorder": LiverDisorder,
-                # "obesity": Obesity(), # Classification
-                # "parkinsons1": Parkinsons1, # Does not converge
-                # "parkinsons2": Parkinsons2, # Does not converge
-                # "onlinenewspopularity": OnlineNewsPopularity, # Does not converge
-                "realestatevaluation": RealEstateValuation,
-                "servo": Servo,
-                "winequality": WineQuality,
-                "youtubeviewcount": YouTubeViewCount,
-                }
-
     all_datasets = list(datasets.keys())
 
     for clf_ in DEFAULT_CLFS:
@@ -205,13 +184,13 @@ if __name__ == '__main__':
             dataset_ = 'all'
         else:
             run(datasets[dataset_.lower()](), clf=clf_)
-            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_normalized)
-            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_uniform)
-            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_normal)
-            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_robustscaler)
+            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_normalized)
+            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_uniform)
+            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_normal)
+            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_robustscaler)
             # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_powertransformer)
-            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_logtransformer)
-            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_lntransformer)
+            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_logtransformer)
+            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_lntransformer)
 
     if dataset_ == 'all':
         print("RMSE:")

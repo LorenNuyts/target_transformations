@@ -33,7 +33,7 @@ class NormalizeTransformer(TransformerMixin):
 class LogTransformer(TransformerMixin):
     def __init__(self, base=10):
         self.base = base
-        self.offset = 0
+        self.offset = 1
 
     def fit(self, X, y=None):
         return self
@@ -43,13 +43,13 @@ class LogTransformer(TransformerMixin):
             y = y.squeeze()
         if isinstance(y, pd.Series):
             y = y.values
-        if 0 in y:
-            self.offset = 1
-            y += 1
+        # if 0 in y:
+        #     self.offset = 1
+        #     y += 1
         if self.base == 10:
-            return np.log10(y)
+            return np.log10(y + 1)
         elif self.base == np.e:
-            return np.log(y)
+            return np.log(y + 1)
         else:
             raise ValueError("Base must be 10 or e")
 
