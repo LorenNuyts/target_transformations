@@ -1117,6 +1117,6 @@ datasets = {"abalone": Abalone,
             "realestatevaluation": RealEstateValuation,
             "servo": Servo,
             "winequality": WineQuality,
-            # "youtube": YouTube,
-            # "youtubelg": YouTubeLg,
+            "youtube": YouTube,
+            "youtubelg": YouTubeLg,
             }
