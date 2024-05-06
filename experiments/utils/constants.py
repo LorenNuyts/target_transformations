@@ -1,7 +1,5 @@
 from sklearn.preprocessing import QuantileTransformer, PowerTransformer, RobustScaler
 
-from eval_method.src.transform_target import *
-
 SEED = 0
 
 
