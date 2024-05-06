@@ -11,6 +11,7 @@ import time
 import sklearn.metrics as metrics
 from sklearn import preprocessing
 from sklearn.datasets import fetch_openml
+from sklearn.experimental import enable_iterative_imputer  # Don't remove this one, it is used!
 
 from ucimlrepo import fetch_ucirepo
 
@@ -1116,6 +1117,6 @@ datasets = {"abalone": Abalone,
             "realestatevaluation": RealEstateValuation,
             "servo": Servo,
             "winequality": WineQuality,
-            "youtube": YouTube,
-            "youtubelg": YouTubeLg,
+            # "youtube": YouTube,
+            # "youtubelg": YouTubeLg,
             }

@@ -54,8 +54,8 @@ def encode_onehot(y: Union[pd.Series, np.ndarray]) -> Union[pd.Series, np.ndarra
     return y_onehot
 
 
-def load_results(base, dataset_name, suffix=None, reset=False):
-    path, path_txt = get_paths(str(base), dataset_name, suffix=suffix)
+def load_results(base, experiment_name, dataset_name, suffix=None, reset=False):
+    path, path_txt = get_paths(str(base), experiment_name, dataset_name, suffix=suffix)
     if not os.path.exists(path): dill.dump({
         'dataset': dataset_name,
     }, open(path, 'wb'))
@@ -66,8 +66,8 @@ def load_results(base, dataset_name, suffix=None, reset=False):
     return results
 
 
-def save_results(results, base, dataset_name, suffix=None):
-    path, path_txt = get_paths(str(base), dataset_name, suffix=suffix)
+def save_results(results, base, experiment_name, dataset_name, suffix=None):
+    path, path_txt = get_paths(str(base), experiment_name, dataset_name, suffix=suffix)
     write_to_txt(results, path_txt, exclude=exclude_txt)
     dill.dump(results, open(path, 'wb'))
 
@@ -93,7 +93,7 @@ def print_results_excel(results: dict, metric: str):
     print(values)
 
 
-def print_all_results_excel(datasets: List[str], metric: str, base: str, suffix: str = ""):
+def print_all_results_excel(datasets: List[str], metric: str, base: str,  experiment_name,suffix: str = ""):
     """
     Print results in Excel format
 
@@ -105,12 +105,14 @@ def print_all_results_excel(datasets: List[str], metric: str, base: str, suffix:
         Metric to print
     base: str
         Base path
+    experiment_name: str
+        The name of the experiments whose results are being printed
     suffix: str
         Suffix to add to the file name
     """
     all_results = {}
     for dataset in datasets:
-        results = load_results(base, dataset, suffix=suffix)
+        results = load_results(base, experiment_name, dataset, suffix=suffix)
         for method in results.keys():
             if method == 'dataset':
                 continue
@@ -229,7 +231,7 @@ def get_clf_full_name(clf, target_transformer_name=None):
     return f"{clf.name}{'__' + target_transformer_name if target_transformer_name is not None else ''}"
 
 
-def get_paths(base, dataset_name, suffix=None):
+def get_paths(base, experiment_name, dataset_name, suffix=None):
     """
     Get paths for results file and txt file
 
@@ -237,6 +239,8 @@ def get_paths(base, dataset_name, suffix=None):
     ----------
     base: str
         Base path
+    experiment_name: str
+        The name of the experiments whose results are being saved
     dataset_name: str
         Name of the dataset
     suffix: str, optional, default None
@@ -250,13 +254,20 @@ def get_paths(base, dataset_name, suffix=None):
         Path to txt file
     """
     if "dtai" in base:
-        config = base.split("/")[-1]
-        base = os.path.join("/cw/dtaiarch/ml/2021-LorenNuyts/Evaluation/experiments", config)
-        if not os.path.exists(base):
-            os.mkdir(base)
-            os.mkdir(os.path.join(base, 'results'))
+        # config = base.split("/")[-1]
+        base = "/cw/dtaiarch/ml/2021-LorenNuyts/evaluation"
+        # if not os.path.exists(base):
+        #     os.mkdir(base)
+            # os.mkdir(os.path.join(base, 'results'))
+    else:
+        splitted = base.split("/")
+        pos = splitted.index("src")
+        base = "/".join(splitted[:pos])
     file_name = get_file_name_base(dataset_name, suffix)
-    path_start = os.path.join(base, 'results', f'{file_name}')
+    path_start = os.path.join(base, "results", experiment_name, f'{file_name}')
+
+    if not os.path.exists(os.path.dirname(path_start)):
+        os.makedirs(os.path.dirname(path_start))
     path = path_start + '.pkl'
     path_txt = path_start + '.txt'
     return path, path_txt
