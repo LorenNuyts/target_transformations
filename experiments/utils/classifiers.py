@@ -6,7 +6,7 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.linear_model import LogisticRegression, Lasso, Ridge
 from sklearn.metrics import root_mean_squared_error
 
-from data import Dataset
+from experiments.data import Dataset
 from experiments.utils.constants import SEED
 
 

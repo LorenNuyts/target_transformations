@@ -4,8 +4,7 @@ import warnings
 
 from sklearn.model_selection import RepeatedStratifiedKFold, RepeatedKFold
 
-from data import *
-from data import datasets
+from experiments.data import *
 from experiments.utils import load_results, save_results, print_all_results_excel, get_clf_full_name
 from experiments.utils.constants import *
 from experiments.utils.alpha_search import AlphaSearch

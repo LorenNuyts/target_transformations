@@ -1,7 +1,8 @@
 import argparse
+import os
 import sys
 
-from data import *
+from experiments.data import datasets
 from experiments.plots import plot_distribution_y, plot_error_bars
 from experiments.utils.constants import *
 from experiments.utils.classifiers import *
@@ -9,13 +10,13 @@ from experiments.utils.classifiers import *
 base = os.path.dirname(os.path.realpath(__file__))
 
 
-def plot_target_distribution(data: Dataset, target_transformer_name=None):
-    data.load_dataset()
+def plot_target_distribution(dataset: Dataset, target_transformer_name=None):
+    dataset.load_dataset()
     results_dir = os.path.join(base, "results")
     if target_transformer_name is not None:
         transformer = get_transformer(target_transformer_name)
-        y = transformer.fit_transform(data.y.values.reshape(-1, 1)).ravel()
-        plot_distribution_y(y, f"{data.name()}: {target_transformer_name}",
+        y = transformer.fit_transform(dataset.y.values.reshape(-1, 1)).ravel()
+        plot_distribution_y(y, f"{dataset.name()}: {target_transformer_name}",
                             save_path=os.path.join(results_dir, dataset_,
                                                    f"{target_transformer_name}_distribution.png"))
     # if transformer == Keys.transformer_normalized:
@@ -33,8 +34,8 @@ def plot_target_distribution(data: Dataset, target_transformer_name=None):
     #                         save_path=os.path.join(results_dir, f"{data.name()}_quantile_normal_distribution.png"))
 
     else:
-        plot_distribution_y(data.y, f"{data.name()}: Entire dataset",
-                            save_path=os.path.join(results_dir, f"{data.name()}_distribution.png"))
+        plot_distribution_y(dataset.y, f"{dataset.name()}: Entire dataset",
+                            save_path=os.path.join(results_dir, f"{dataset.name()}_distribution.png"))
 
 
 if __name__ == '__main__':

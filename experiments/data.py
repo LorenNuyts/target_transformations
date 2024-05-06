@@ -14,7 +14,7 @@ from sklearn.datasets import fetch_openml
 
 from ucimlrepo import fetch_ucirepo
 
-from data.utils import SEED
+from experiments.utils.constants import SEED
 
 # MODEL_DIR = os.environ["MODEL_DIR"]
 DATA_DIR = os.environ["DATA_DIR"]
@@ -207,7 +207,6 @@ class Dataset:
         self.X.loc[:, cat_columns] = self.X[cat_columns].astype('category').apply(lambda x: x.cat.codes)
 
     def impute_missing_values(self):
-        from sklearn.experimental import enable_iterative_imputer
         from sklearn.impute import IterativeImputer
         imp = IterativeImputer(max_iter=10, random_state=SEED)
         if self.Xtrain is not None and self.Xtest is not None:
