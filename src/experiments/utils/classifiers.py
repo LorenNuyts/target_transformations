@@ -6,8 +6,8 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.linear_model import LogisticRegression, Lasso, Ridge
 from sklearn.metrics import root_mean_squared_error
 
-from src.experiments.data import Dataset
-from src.experiments.utils.constants import SEED
+from .constants import SEED
+from ..data import Dataset
 
 
 class AbstractClassifier(abc.ABC):
