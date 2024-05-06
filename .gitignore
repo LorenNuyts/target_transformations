@@ -1,21 +1,21 @@
 /data/datasets/
-/experiments/results/
+/src/experiments/results/
 /.venv/
 /.idea/
-/experiments/plots/results/
+/src/experiments/plots/results/
 
 data/__pycache__/
 
-experiments/results2/
-/experiments/results3/
+src/experiments/results2/
+/src/experiments/results3/
 
-experiments/__pycache__/
+src/experiments/__pycache__/
 
-experiments/results1/
+src/experiments/results1/
 
-experiments/plots/__pycache__/
+src/experiments/plots/__pycache__/
 
-experiments/utils/__pycache__/
+src/experiments/utils/__pycache__/
 
 algorithms/src/__pycache__/
 

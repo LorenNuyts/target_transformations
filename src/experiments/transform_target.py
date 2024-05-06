@@ -4,11 +4,9 @@ import warnings
 
 from sklearn.model_selection import RepeatedStratifiedKFold, RepeatedKFold
 
-from experiments.data import *
-from experiments.utils import load_results, save_results, print_all_results_excel, get_clf_full_name
-from experiments.utils.constants import *
-from experiments.utils.alpha_search import AlphaSearch
-from experiments.utils.classifiers import *
+from src.experiments.utils.constants import *
+from src.experiments.utils.alpha_search import AlphaSearch
+from src.experiments.utils.classifiers import *
 
 base = os.path.dirname(os.path.realpath(__file__))
 

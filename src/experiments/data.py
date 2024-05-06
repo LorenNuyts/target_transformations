@@ -14,7 +14,7 @@ from sklearn.datasets import fetch_openml
 
 from ucimlrepo import fetch_ucirepo
 
-from experiments.utils.constants import SEED
+from utils.constants import SEED
 
 # MODEL_DIR = os.environ["MODEL_DIR"]
 DATA_DIR = os.environ["DATA_DIR"]

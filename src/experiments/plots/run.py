@@ -2,10 +2,9 @@ import argparse
 import os
 import sys
 
-from experiments.data import datasets
-from experiments.plots import plot_distribution_y, plot_error_bars
-from experiments.utils.constants import *
-from experiments.utils.classifiers import *
+from src.experiments.data import datasets
+from src.experiments.plots import plot_distribution_y, plot_error_bars
+from src.experiments.utils.constants import Keys, get_transformer
 
 base = os.path.dirname(os.path.realpath(__file__))
 
