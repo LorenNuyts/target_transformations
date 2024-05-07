@@ -253,21 +253,36 @@ def get_paths(base, experiment_name, dataset_name, suffix=None):
     str
         Path to txt file
     """
-    if "dtai" in base:
-        # config = base.split("/")[-1]
-        base = "/cw/dtaiarch/ml/2021-LorenNuyts/evaluation"
-        # if not os.path.exists(base):
-        #     os.mkdir(base)
-            # os.mkdir(os.path.join(base, 'results'))
-    else:
-        splitted = base.split("/")
-        pos = splitted.index("src")
-        base = "/".join(splitted[:pos])
+    results_dir = get_results_dir()
+    # if "dtai" in base:
+    #     # config = base.split("/")[-1]
+    #     base = "/cw/dtaiarch/ml/2021-LorenNuyts/evaluation"
+    #     # if not os.path.exists(base):
+    #     #     os.mkdir(base)
+    #         # os.mkdir(os.path.join(base, 'results'))
+    # else:
+    #     splitted = base.split("/")
+    #     pos = splitted.index("src")
+    #     base = "/".join(splitted[:pos])
     file_name = get_file_name_base(dataset_name, suffix)
-    path_start = os.path.join(base, "results", experiment_name, f'{file_name}')
+    path_start = os.path.join(results_dir, experiment_name, file_name)
 
     if not os.path.exists(os.path.dirname(path_start)):
         os.makedirs(os.path.dirname(path_start))
     path = path_start + '.pkl'
     path_txt = path_start + '.txt'
     return path, path_txt
+
+
+def get_results_dir():
+    try:
+        return os.environ["RESULTS_DIR"]
+    except KeyError:
+        base = os.path.dirname(os.path.realpath(__file__))
+        if "dtai" in base:
+            return "/cw/dtaiarch/ml/2021-LorenNuyts/evaluation/results"
+        else:
+            splitted = base.split("/")
+            pos = splitted.index("src")
+            path = "/".join(splitted[:pos])
+            return os.path.join(path, "results")

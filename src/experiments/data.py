@@ -52,7 +52,7 @@ class Dataset:
         self.other_params = {}
         self.missing_values = False
 
-    def name(self):
+    def name(self) -> str:
         return type(self).__name__
 
     def xgb_params(self, task, custom_params=None):
@@ -1113,7 +1113,7 @@ datasets = {"abalone": Abalone,
             # "obesity": Obesity(), # Classification
             # "parkinsons1": Parkinsons1, # Does not converge
             # "parkinsons2": Parkinsons2, # Does not converge
-            # "onlinenewspopularity": OnlineNewsPopularity, # Does not converge
+            "onlinenewspopularity": OnlineNewsPopularity, # Does not converge
             "realestatevaluation": RealEstateValuation,
             "servo": Servo,
             "winequality": WineQuality,
