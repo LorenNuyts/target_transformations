@@ -66,20 +66,20 @@ if __name__ == '__main__':
                 plot_target_distribution(datasets[dataset_](), target_transformer_name=Keys.transformer_logtransformer)
                 plot_target_distribution(datasets[dataset_](), target_transformer_name=Keys.transformer_lntransformer)
         else:
-            # plot_target_distribution(datasets[dataset_.lower()]())
-            # plot_target_distribution(datasets[dataset_.lower()](), target_transformer_name=Keys.transformer_normalized)
-            # plot_target_distribution(datasets[dataset_.lower()](),
-            #                          target_transformer_name=Keys.transformer_quantile_uniform)
-            # plot_target_distribution(datasets[dataset_.lower()](),
-            #                          target_transformer_name=Keys.transformer_quantile_normal)
-            # plot_target_distribution(datasets[dataset_.lower()](),
-            #                          target_transformer_name=Keys.transformer_robustscaler)
+            plot_target_distribution(datasets[dataset_.lower()]())
+            plot_target_distribution(datasets[dataset_.lower()](), target_transformer_name=Keys.transformer_normalized)
+            plot_target_distribution(datasets[dataset_.lower()](),
+                                     target_transformer_name=Keys.transformer_quantile_uniform)
+            plot_target_distribution(datasets[dataset_.lower()](),
+                                     target_transformer_name=Keys.transformer_quantile_normal)
+            plot_target_distribution(datasets[dataset_.lower()](),
+                                     target_transformer_name=Keys.transformer_robustscaler)
             plot_target_distribution(datasets[dataset_.lower()](),
                                      target_transformer_name=Keys.transformer_powertransformer)
-            # plot_target_distribution(datasets[dataset_.lower()](),
-            #                          target_transformer_name=Keys.transformer_logtransformer)
-            # plot_target_distribution(datasets[dataset_.lower()](),
-            #                          target_transformer_name=Keys.transformer_lntransformer)
+            plot_target_distribution(datasets[dataset_.lower()](),
+                                     target_transformer_name=Keys.transformer_logtransformer)
+            plot_target_distribution(datasets[dataset_.lower()](),
+                                     target_transformer_name=Keys.transformer_lntransformer)
 
     elif args.plot == 'error_distribution':
         if dataset_ == 'all':
