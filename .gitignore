@@ -22,3 +22,5 @@ algorithms/src/__pycache__/
 data/raw_data/data/
 
 results/
+
+src/experiments/tables/__pycache__/

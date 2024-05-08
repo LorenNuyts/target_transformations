@@ -6,7 +6,7 @@ from sklearn.preprocessing import QuantileTransformer, PowerTransformer, RobustS
 from src.algorithms.transform_target import NormalizeTransformer, LogTransformer
 
 SEED = 0
-
+default_suffix = ''
 
 class Keys:
     """

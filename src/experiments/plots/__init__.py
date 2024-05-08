@@ -127,8 +127,7 @@ def plot_multiple_with_fill(x, means, lower, upper, labels, x_label=None, y_labe
 def plot_error_bars(y, dataset_name: str, included_transformers: list, clf=DEFAULT_CLFS[1],
                     suffix="", latex=False, nb_tr_per_plot=6):
     plots_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "results/error_distribution")
-    base = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
-    results = load_results(base, dataset_name, suffix=suffix, reset=False)
+    results = load_results("error_distribution", dataset_name, suffix=suffix, reset=False)
     xrange = None
     all_means = []
     all_upper = []

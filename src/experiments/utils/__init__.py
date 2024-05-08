@@ -5,7 +5,7 @@ import dill
 import numpy as np
 import pandas as pd
 
-from .constants import Keys
+from .constants import Keys, default_suffix
 
 
 # \Section: Project general
@@ -54,8 +54,8 @@ def encode_onehot(y: Union[pd.Series, np.ndarray]) -> Union[pd.Series, np.ndarra
     return y_onehot
 
 
-def load_results(base, experiment_name, dataset_name, suffix=None, reset=False):
-    path, path_txt = get_paths(str(base), experiment_name, dataset_name, suffix=suffix)
+def load_results(experiment_name, dataset_name, suffix=None, reset=False):
+    path, path_txt = get_paths(experiment_name, dataset_name, suffix=suffix)
     if not os.path.exists(path): dill.dump({
         'dataset': dataset_name,
     }, open(path, 'wb'))
@@ -66,68 +66,10 @@ def load_results(base, experiment_name, dataset_name, suffix=None, reset=False):
     return results
 
 
-def save_results(results, base, experiment_name, dataset_name, suffix=None):
-    path, path_txt = get_paths(str(base), experiment_name, dataset_name, suffix=suffix)
+def save_results(results, experiment_name, dataset_name, suffix=None):
+    path, path_txt = get_paths(experiment_name, dataset_name, suffix=suffix)
     write_to_txt(results, path_txt, exclude=exclude_txt)
     dill.dump(results, open(path, 'wb'))
-
-
-def print_results_excel(results: dict, metric: str):
-    """
-    Print results in Excel format
-
-    Parameters
-    ----------
-    results: dict
-        Results dictionary
-    metric: str
-        Metric to print
-    """
-    # Start header with 1 empty cell
-    header = "\t"
-    values = f"{results['dataset']}\t"
-    for method in results.keys():
-        header += f"{method}\t"
-        values += f"{results[method][metric]}\t"
-    print(header)
-    print(values)
-
-
-def print_all_results_excel(datasets: List[str], metric: str, base: str,  experiment_name,suffix: str = ""):
-    """
-    Print results in Excel format
-
-    Parameters
-    ----------
-    datasets
-        List of datasets to print the results of
-    metric: str
-        Metric to print
-    base: str
-        Base path
-    experiment_name: str
-        The name of the experiments whose results are being printed
-    suffix: str
-        Suffix to add to the file name
-    """
-    all_results = {}
-    for dataset in datasets:
-        results = load_results(base, experiment_name, dataset, suffix=suffix)
-        for method in results.keys():
-            if method == 'dataset':
-                continue
-            if method not in all_results:
-                all_results[method] = []
-            all_results[method].append(results[method][metric])
-
-    values = pd.DataFrame(index=datasets, columns=list(all_results.keys()))
-    for i, method in enumerate(all_results.keys()):
-        values[method] = all_results[method]
-
-    # Transform values to excel format such that I can copy paste them in excel
-    print(values.to_csv(sep='\t'))
-
-    # print(values)
 
 
 def write_to_txt(results: dict, path: str, exclude: List[str] = None) -> None:
@@ -231,14 +173,12 @@ def get_clf_full_name(clf, target_transformer_name=None):
     return f"{clf.name}{'__' + target_transformer_name if target_transformer_name is not None else ''}"
 
 
-def get_paths(base, experiment_name, dataset_name, suffix=None):
+def get_paths(experiment_name, dataset_name, suffix=None):
     """
     Get paths for results file and txt file
 
     Parameters
     ----------
-    base: str
-        Base path
     experiment_name: str
         The name of the experiments whose results are being saved
     dataset_name: str
@@ -286,3 +226,4 @@ def get_results_dir():
             pos = splitted.index("src")
             path = "/".join(splitted[:pos])
             return os.path.join(path, "results")
+

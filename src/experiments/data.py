@@ -1100,7 +1100,7 @@ class YouTubeLg(Dataset):
 
 datasets = {"abalone": Abalone,
             "autompg": AutoMPG,  # Missing values
-            "bikesharing": BikeSharing, # Does not converge
+            "bikesharing": BikeSharing,  # Does not converge
             "powerplant": CombinedCyclePowerPlant,
             # "challenger": Challenger, # Does not converge
             # "computerhardware": ComputerHardware, # What is the target?
@@ -1113,7 +1113,7 @@ datasets = {"abalone": Abalone,
             # "obesity": Obesity(), # Classification
             # "parkinsons1": Parkinsons1, # Does not converge
             # "parkinsons2": Parkinsons2, # Does not converge
-            "onlinenewspopularity": OnlineNewsPopularity, # Does not converge
+            "onlinenewspopularity": OnlineNewsPopularity,  # Does not converge
             "realestatevaluation": RealEstateValuation,
             "servo": Servo,
             "winequality": WineQuality,

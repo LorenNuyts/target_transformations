@@ -8,7 +8,8 @@ from sklearn.metrics import root_mean_squared_error
 from sklearn.model_selection import RepeatedStratifiedKFold, RepeatedKFold
 
 from src.experiments.data import Dataset, Task, datasets
-from src.experiments.utils import load_results, get_clf_full_name, save_results, print_all_results_excel
+from src.experiments.utils import load_results, get_clf_full_name, save_results
+from src.experiments.tables import print_all_results_excel
 from src.experiments.utils.alpha_search import AlphaSearch
 from src.experiments.utils.classifiers import LassoTuned, RidgeRegressionTuned, GradientBoostingRegressorWrapper
 from src.experiments.utils.constants import SEED, get_transformer, Keys
@@ -23,8 +24,9 @@ DEFAULT_CLFS = [
 
 NAME = "transform_target"
 
+
 def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None):
-    results = load_results(base, NAME, dataset_, suffix=suffix, reset=False)
+    results = load_results(NAME, dataset_, suffix=suffix, reset=False)
     clf_name = get_clf_full_name(clf, target_transformer_name)
     if clf_name not in results:
         results[clf_name] = {}
@@ -140,7 +142,7 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None):
         #     save_path = os.path.join(base, f"plots/results/{dataset_}/{clf_name}_error_bars.png")
         #
         #     plot_distribution_y(average_error.values, title, save_path, x_label)
-        save_results(results, base, NAME, dataset_, suffix=suffix)
+        save_results(results, NAME, dataset_, suffix=suffix)
     # print_results(results)
 
 
@@ -191,13 +193,13 @@ if __name__ == '__main__':
             run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_uniform)
             run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_normal)
             run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_robustscaler)
-            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_powertransformer)
+            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_powertransformer)
             run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_logtransformer)
             run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_lntransformer)
 
     if dataset_ == 'all':
         print("RMSE:")
-        print_all_results_excel(all_datasets, Keys.average_rmse, base, NAME, suffix=suffix)
+        print_all_results_excel(all_datasets, Keys.average_rmse, NAME, suffix=suffix)
         print("###########################################################################")
         print("NRMSE:")
-        print_all_results_excel(all_datasets, Keys.average_nrmse, base, NAME, suffix=suffix)
+        print_all_results_excel(all_datasets, Keys.average_nrmse, NAME, suffix=suffix)
