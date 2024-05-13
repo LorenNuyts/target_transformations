@@ -172,7 +172,7 @@ def get_clf_full_name(clf, target_transformer_name=None, feature_transformer_nam
     str
         Full name of the classifier
     """
-    return (f"{clf.name}{'__' + feature_transformer_name if feature_transformer_name is not None else ''}"
+    return (f"{clf.name}{'__f_' + feature_transformer_name if feature_transformer_name is not None else ''}"
             f"{'__' + target_transformer_name if target_transformer_name is not None else ''}")
 
 
