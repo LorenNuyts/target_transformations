@@ -23,4 +23,8 @@ data/raw_data/data/
 
 results/
 
-src/experiments/tables/__pycache__/
+src/experiments/print_results/__pycache__/
+
+src/__pycache__/
+
+src/algorithms/__pycache__/

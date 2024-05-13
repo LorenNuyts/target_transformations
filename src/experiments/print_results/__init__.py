@@ -6,7 +6,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 
-from src.experiments.tables.TextParser import TextParser
+from src.experiments.print_results.TextParser import TextParser
 
 from src.experiments.utils import get_paths, Keys, default_suffix, load_results
 

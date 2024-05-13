@@ -1,7 +1,7 @@
 import argparse
 
 from src.experiments.data import datasets
-from src.experiments.tables import print_all_results_excel
+from src.experiments.print_results import print_all_results_excel
 from src.experiments.utils import default_suffix, Keys
 
 if __name__ == '__main__':
