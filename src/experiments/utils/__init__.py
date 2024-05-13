@@ -154,7 +154,7 @@ def get_file_name_base(dataset_name, suffix=None):
            f'{suffix}'
 
 
-def get_clf_full_name(clf, target_transformer_name=None):
+def get_clf_full_name(clf, target_transformer_name=None, feature_transformer_name=None):
     """
     Get the full name of a classifier
 
@@ -164,13 +164,16 @@ def get_clf_full_name(clf, target_transformer_name=None):
         Classifier
     target_transformer_name: str, optional, default None
         Name of the target transformer
+    feature_transformer_name: str, optional, default None
+        Name of the feature transformer
 
     Returns
     -------
     str
         Full name of the classifier
     """
-    return f"{clf.name}{'__' + target_transformer_name if target_transformer_name is not None else ''}"
+    return (f"{clf.name}{'__' + feature_transformer_name if feature_transformer_name is not None else ''}"
+            f"{'__' + target_transformer_name if target_transformer_name is not None else ''}")
 
 
 def get_paths(experiment_name, dataset_name, suffix=None):
@@ -215,6 +218,12 @@ def get_paths(experiment_name, dataset_name, suffix=None):
 
 
 def get_results_dir():
+    """
+    Get the directory where results are stored. If the environment variable RESULTS_DIR is set, it is used. Otherwise,
+    the default path is used.
+    :return: str
+        Path to the results directory
+    """
     try:
         return os.environ["RESULTS_DIR"]
     except KeyError:

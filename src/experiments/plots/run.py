@@ -75,8 +75,8 @@ if __name__ == '__main__':
             plot_target_distribution(datasets[dataset_.lower()](),
                                      target_transformer_name=Keys.transformer_robustscaler)
             plot_target_distribution(datasets[dataset_.lower()](),
-                                     target_transformer_name=Keys.transformer_powertransformer)
-            plot_target_distribution(datasets[dataset_.lower()](),
+            #                          target_transformer_name=Keys.transformer_powertransformer)
+            # plot_target_distribution(datasets[dataset_.lower()](),
                                      target_transformer_name=Keys.transformer_logtransformer)
             plot_target_distribution(datasets[dataset_.lower()](),
                                      target_transformer_name=Keys.transformer_lntransformer)
@@ -106,6 +106,6 @@ if __name__ == '__main__':
                                                    Keys.transformer_quantile_uniform,
                                                    Keys.transformer_quantile_normal,
                                                    # Keys.transformer_robustscaler,
-                                                   Keys.transformer_powertransformer,
+                                                   # Keys.transformer_powertransformer,
                                                    # Keys.transformer_logtransformer,
                                                    Keys.transformer_lntransformer])

@@ -7,7 +7,7 @@ import seaborn as sns
 import pandas as pd
 
 from src.experiments.transform_target import DEFAULT_CLFS
-from src.experiments.utils import get_clf_full_name, load_results, Keys
+from src.experiments.utils import get_clf_full_name, load_results, Keys, get_paths, get_results_dir
 
 
 def pretty_print(x, y):
@@ -126,8 +126,8 @@ def plot_multiple_with_fill(x, means, lower, upper, labels, x_label=None, y_labe
 
 def plot_error_bars(y, dataset_name: str, included_transformers: list, clf=DEFAULT_CLFS[1],
                     suffix="", latex=False, nb_tr_per_plot=6):
-    plots_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "results/error_distribution")
-    results = load_results("error_distribution", dataset_name, suffix=suffix, reset=False)
+    # plots_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "results/plots/error_distribution")
+    results = load_results("transform_target", dataset_name, suffix=suffix, reset=False)
     xrange = None
     all_means = []
     all_upper = []
@@ -181,7 +181,9 @@ def plot_error_bars(y, dataset_name: str, included_transformers: list, clf=DEFAU
     if latex:
         print("\n\n")
 
+    plots_dir = get_results_dir()
     plot_multiple_with_fill(xrange, all_means, all_lower, all_upper, labels,
                             "Target value", "Absolute error",
-                            save_name=os.path.join(plots_dir, f"{dataset_name}"),
+                            save_name=os.path.join(plots_dir, "plots", "error_distribution",
+                                                   f"error_distribution_{dataset_name}"),
                             title=f"Absolute error distribution for {dataset_name}")

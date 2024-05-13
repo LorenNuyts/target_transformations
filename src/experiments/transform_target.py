@@ -25,9 +25,9 @@ DEFAULT_CLFS = [
 NAME = "transform_target"
 
 
-def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None):
+def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, feature_transformer_name=None, suffix=""):
     results = load_results(NAME, dataset_, suffix=suffix, reset=False)
-    clf_name = get_clf_full_name(clf, target_transformer_name)
+    clf_name = get_clf_full_name(clf, target_transformer_name, feature_transformer_name)
     if clf_name not in results:
         results[clf_name] = {}
 
@@ -39,7 +39,6 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None):
         rskf = RepeatedStratifiedKFold(n_splits=2, n_repeats=5, random_state=SEED)
     all_rmse = []
     all_nrmse = []
-    # error_bars = []
 
     for i, (train_index, test_index) in enumerate(rskf.split(data.X, data.y)):
         if i in results[clf_name].keys():
@@ -55,17 +54,9 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None):
         if target_transformer_name is not None:
             transformer = get_transformer(target_transformer_name)
             data.transform_target_custom(transformer)
-
-            # data.normalize_y()
-        # elif custom or quantile:
-        #     if quantile:
-        #         transformer = QuantileTransformer(n_quantiles=10, random_state=0)
-        #     else:
-        #         # transformer = QuantileTransformer(n_quantiles=10, random_state=0, output_distribution='normal')
-        #         # transformer = RobustScaler()
-        #         # transformer = PowerTransformer()
-        #         # transformer = LogTransformer(base=10)
-        #         transformer = LogTransformer(base=np.e)
+        if feature_transformer_name is not None:
+            feature_transformer = get_transformer(feature_transformer_name)
+            data.transform_features_custom(feature_transformer)
 
         clf = copy.deepcopy(clf)
 
@@ -86,18 +77,6 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None):
                 score = np.nan
                 if error is None:  # The transformation failed
                     error = np.nan
-            # transformed_pred = data.other_params["ytrain_mean"] + predictions * data.other_params["ytrain_std"]
-            # score *= (data.y.max() - data.y.min())
-            # score = root_mean_squared_error(data.ytest, transformed_pred)
-        #     score = root_mean_squared_error(data.ytest, predictions)
-        #     score *= data.other_params["ytrain_std"]
-        # elif custom or quantile:
-        #     try:
-        #         transformed_pred = data.other_params['target_transformer'].inverse_transform(
-        #             predictions.reshape(-1, 1)).ravel()
-        #         score = root_mean_squared_error(data.ytest, transformed_pred)
-        #     except ValueError:
-        #         score = np.nan
 
         else:
             score = root_mean_squared_error(data.ytest, predictions)
@@ -114,7 +93,6 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None):
         else:
             ytest = data.ytest
         nrmse = root_mean_squared_error(ytest, predictions) / (ytest.max() - ytest.min())
-        # nrmse = scipy.stats.variation(ytest)
         all_nrmse.append(nrmse)
 
         results[clf_name][i] = {Keys.clf: clf,
@@ -129,19 +107,6 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None):
                                   Keys.std_rmse: np.std(all_rmse)})
         results[clf_name].update({Keys.average_nrmse: np.mean(all_nrmse),
                                   Keys.std_nrmse: np.std(all_nrmse)})
-        # if plot_error_bars:
-        #     absolute_errors = [np.abs(error_bars[i]) for i in range(len(error_bars))]
-        #     df_error = pd.DataFrame(absolute_errors).transpose()
-        #     average_error = df_error.mean(axis=1)
-        #     # df_error_bars = pd.DataFrame(index=data.y.index, columns=range(len(error_bars)//2))
-        #     # for i in data.y.index:
-        #     #     not_nans = df.loc[i].dropna()
-        #     #     df_error_bars.loc[i] = not_nans.values
-        #     title = f"Error bars for {data.name()} - {clf_name}"
-        #     x_label = "Absolute error"
-        #     save_path = os.path.join(base, f"plots/results/{dataset_}/{clf_name}_error_bars.png")
-        #
-        #     plot_distribution_y(average_error.values, title, save_path, x_label)
         save_results(results, NAME, dataset_, suffix=suffix)
     # print_results(results)
 
@@ -164,12 +129,14 @@ def no_alpha_search(clf, data):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('dataset', type=str)
+    parser.add_argument('--feature_transformer', type=str, nargs="?", default=None)
     # parser.add_argument('--plot_error', action='store_true')
     # parser.add_argument("--auc", type=float, nargs="?", default=default_auc_percentage)
     parser.add_argument("--suffix", type=str, nargs="?", default="")
     args = parser.parse_args()
     dataset_ = args.dataset
-    suffix = args.suffix
+    feature_transformer_ = args.feature_transformer
+    suffix_ = args.suffix
 
     all_datasets = list(datasets.keys())
 
@@ -177,29 +144,43 @@ if __name__ == '__main__':
         if dataset_ == 'all':
             for dataset_ in all_datasets:
                 print(f"Running {dataset_}...")
-                run(datasets[dataset_](), clf=clf_)
-                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_normalized)
-                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_quantile_uniform)
-                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_quantile_normal)
-                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_robustscaler)
-                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_powertransformer)
-                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_logtransformer)
-                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_lntransformer)
+                run(datasets[dataset_](), clf=clf_, feature_transformer_name=feature_transformer_, suffix=suffix_)
+                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_normalized,
+                    feature_transformer_name=feature_transformer_, suffix=suffix_)
+                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_quantile_uniform,
+                    feature_transformer_name=feature_transformer_, suffix=suffix_)
+                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_quantile_normal,
+                    feature_transformer_name=feature_transformer_, suffix=suffix_)
+                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_robustscaler,
+                    feature_transformer_name=feature_transformer_, suffix=suffix_)
+                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_powertransformer,
+                    feature_transformer_name=feature_transformer_, suffix=suffix_)
+                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_logtransformer,
+                    feature_transformer_name=feature_transformer_, suffix=suffix_)
+                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_lntransformer,
+                    feature_transformer_name=feature_transformer_, suffix=suffix_)
 
             dataset_ = 'all'
         else:
-            run(datasets[dataset_.lower()](), clf=clf_)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_normalized)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_uniform)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_normal)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_robustscaler)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_powertransformer)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_logtransformer)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_lntransformer)
+            run(datasets[dataset_.lower()](), clf=clf_, feature_transformer_name=feature_transformer_, suffix=suffix_)
+            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_normalized,
+                feature_transformer_name=feature_transformer_, suffix=suffix_)
+            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_uniform,
+                feature_transformer_name=feature_transformer_, suffix=suffix_)
+            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_normal,
+                feature_transformer_name=feature_transformer_, suffix=suffix_)
+            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_robustscaler,
+                feature_transformer_name=feature_transformer_, suffix=suffix_)
+            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_powertransformer,
+                feature_transformer_name=feature_transformer_, suffix=suffix_)
+            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_logtransformer,
+                feature_transformer_name=feature_transformer_, suffix=suffix_)
+            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_lntransformer,
+                feature_transformer_name=feature_transformer_, suffix=suffix_)
 
     if dataset_ == 'all':
         print("RMSE:")
-        print_all_results_excel(all_datasets, Keys.average_rmse, NAME, suffix=suffix)
+        print_all_results_excel(all_datasets, Keys.average_rmse, NAME, suffix=suffix_)
         print("###########################################################################")
         print("NRMSE:")
-        print_all_results_excel(all_datasets, Keys.average_nrmse, NAME, suffix=suffix)
+        print_all_results_excel(all_datasets, Keys.average_nrmse, NAME, suffix=suffix_)

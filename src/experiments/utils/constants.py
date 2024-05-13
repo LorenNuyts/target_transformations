@@ -8,6 +8,7 @@ from src.algorithms.transform_target import NormalizeTransformer, LogTransformer
 SEED = 0
 default_suffix = ''
 
+
 class Keys:
     """
     A class containing strings that are used as dictionary keys throughout the package.
@@ -39,19 +40,19 @@ class Keys:
 
 
 def get_transformer(transformer_name):
-    if transformer_name == Keys.transformer_normalized:
+    if transformer_name == Keys.transformer_normalized or transformer_name == "normalized":
         return NormalizeTransformer()
-    elif transformer_name == Keys.transformer_quantile_uniform:
+    elif transformer_name == Keys.transformer_quantile_uniform or transformer_name == "quantile_uniform":
         return QuantileTransformer(n_quantiles=10, random_state=0, output_distribution='uniform')
-    elif transformer_name == Keys.transformer_quantile_normal:
+    elif transformer_name == Keys.transformer_quantile_normal or transformer_name == "quantile_normal":
         return QuantileTransformer(n_quantiles=10, random_state=0, output_distribution='normal')
-    elif transformer_name == Keys.transformer_powertransformer:
+    elif transformer_name == Keys.transformer_powertransformer or transformer_name == "powertransformer":
         return PowerTransformer()
-    elif transformer_name == Keys.transformer_logtransformer:
+    elif transformer_name == Keys.transformer_logtransformer or transformer_name == "logtransformer":
         return LogTransformer(base=10)
-    elif transformer_name == Keys.transformer_lntransformer:
+    elif transformer_name == Keys.transformer_lntransformer or transformer_name == "lntransformer":
         return LogTransformer(base=np.e)
-    elif transformer_name == Keys.transformer_robustscaler:
+    elif transformer_name == Keys.transformer_robustscaler or transformer_name == "robustscaler":
         return RobustScaler()
     else:
         raise ValueError("Invalid transformer name: {}".format(transformer_name))
