@@ -212,12 +212,12 @@ class Dataset:
         imp = IterativeImputer(max_iter=10, random_state=SEED)
         if self.Xtrain is not None and self.Xtest is not None:
             imp.fit(self.Xtrain)
-            self.Xtrain = imp.transform(self.Xtrain)
+            self.Xtrain = pd.DataFrame(imp.transform(self.Xtrain), columns=self.Xtrain.columns, index=self.Xtrain.index)
             if self.Xval is not None:
-                self.Xval = imp.transform(self.Xval)
-            self.Xtest = imp.transform(self.Xtest)
+                self.Xval = pd.DataFrame(imp.transform(self.Xval), columns=self.Xval.columns, index=self.Xval.index)
+            self.Xtest = pd.DataFrame(imp.transform(self.Xtest), columns=self.Xtest.columns, index=self.Xtest.index)
         else:
-            self.X = imp.fit_transform(self.X)
+            self.X = pd.DataFrame(imp.fit_transform(self.X), columns=self.X.columns, index=self.X.index)
 
     def encode_y(self):
         if self.y is None:
