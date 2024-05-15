@@ -24,7 +24,6 @@ if __name__ == '__main__':
     metric_ = parser.parse_args().metric
     datasets_ = parser.parse_args().datasets
     
-    # method_ = parser.parse_args().method
     # split_ = parser.parse_args().split
     suffix_ = parser.parse_args().suffix
     from_pkl_ = parser.parse_args().from_pkl
