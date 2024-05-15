@@ -153,8 +153,9 @@ if __name__ == '__main__':
                     feature_transformer_name=feature_transformer_, suffix=suffix_)
                 run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_robustscaler,
                     feature_transformer_name=feature_transformer_, suffix=suffix_)
-                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_powertransformer,
-                    feature_transformer_name=feature_transformer_, suffix=suffix_)
+                if "youtube" not in dataset_:
+                    run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_powertransformer,
+                        feature_transformer_name=feature_transformer_, suffix=suffix_)
                 run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_logtransformer,
                     feature_transformer_name=feature_transformer_, suffix=suffix_)
                 run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_lntransformer,

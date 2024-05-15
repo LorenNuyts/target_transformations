@@ -23,7 +23,7 @@ if __name__ == '__main__':
     experiment_ = parser.parse_args().experiment
     metric_ = parser.parse_args().metric
     datasets_ = parser.parse_args().datasets
-    
+
     # split_ = parser.parse_args().split
     suffix_ = parser.parse_args().suffix
     from_pkl_ = parser.parse_args().from_pkl
@@ -37,5 +37,6 @@ if __name__ == '__main__':
 
     all_metrics = {'rmse': Keys.average_rmse, 'nrmse': Keys.average_nrmse}
 
-    print_all_results_excel(datasets_, all_metrics[metric_].replace(' ', ''),
-                            experiment_, suffix=suffix_, from_text=not from_pkl_)
+    print_all_results_excel(datasets_, all_metrics[metric_].replace(' ', ''), experiment_,
+                            substring=f"__f_{Keys.transformer_normalized}",
+                            suffix=suffix_, from_text=not from_pkl_)

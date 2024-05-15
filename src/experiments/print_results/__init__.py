@@ -437,7 +437,8 @@ def print_all_results_excel(datasets: List[str], metric: str,  experiment_name, 
     from_text: bool
         Whether to load the results from a txt file. If False, the results are loaded from a pickle file
     """
-    all_results = {}
+    # all_results = {}
+    values = pd.DataFrame(index=datasets, columns=[])
     for dataset in datasets:
         if from_text:
             results = load_results_txt(experiment_name, dataset, suffix=suffix)
@@ -446,13 +447,16 @@ def print_all_results_excel(datasets: List[str], metric: str,  experiment_name, 
         for method in results.keys():
             if method == 'dataset' or (substring is not None and substring not in method):
                 continue
-            if method not in all_results:
-                all_results[method] = []
-            all_results[method].append(results[method][metric])
+            # if method not in all_results:
+            #     all_results[method] = []
+            # all_results[method].append(results[method][metric])
+            values.at[dataset, method] = results[method][metric]
+        # values.loc[dataset] = [results[method][metric] for method in results.keys() if method != 'dataset' and (
+        #         substring is None or substring in method)]
 
-    values = pd.DataFrame(index=datasets, columns=list(all_results.keys()))
-    for i, method in enumerate(all_results.keys()):
-        values[method] = all_results[method]
+    # values = pd.DataFrame(index=datasets, columns=list(all_results.keys()))
+    # for i, method in enumerate(all_results.keys()):
+    #     values[method] = all_results[method]
 
     # Transform values to excel format such that I can copy paste them in excel
     print(values.to_csv(sep='\t'))
