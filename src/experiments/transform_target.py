@@ -46,6 +46,16 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, featur
         if i in results[clf_name].keys():
             if Keys.rse not in results[clf_name][i].keys():
                 print("Calculating RSE...")
+                data.cross_validation(train_index, test_index, force=True)
+                data.split_validation_set()
+                if data.missing_values:
+                    data.impute_missing_values()
+                if target_transformer_name is not None:
+                    transformer = get_transformer(target_transformer_name)
+                    data.transform_target_custom(transformer)
+                if feature_transformer_name is not None:
+                    feature_transformer = get_transformer(feature_transformer_name)
+                    data.transform_features_custom(feature_transformer)
                 results[clf_name][i][Keys.rse] = (
                     relative_squared_error(data.ytest, results[clf_name][i][Keys.predictions]))
                 all_rse.append(results[clf_name][i][Keys.rse])
@@ -123,6 +133,7 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, featur
     elif len(all_rse) == 10:
         results[clf_name].update({Keys.average_rse: np.mean(all_rse),
                                   Keys.std_rse: np.std(all_rse)})
+        save_results(results, NAME, dataset_, suffix=suffix)
     if Keys.average_rse not in results[clf_name].keys():
         print("Average RSE was not added to the results :(")
     # print_results(results)
@@ -180,18 +191,18 @@ if __name__ == '__main__':
 
             dataset_ = 'all'
         else:
-            # run(datasets[dataset_.lower()](), clf=clf_, feature_transformer_name=feature_transformer_, suffix=suffix_)
-            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_normalized,
-            #     feature_transformer_name=feature_transformer_, suffix=suffix_)
-            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_uniform,
-            #     feature_transformer_name=feature_transformer_, suffix=suffix_)
-            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_normal,
-            #     feature_transformer_name=feature_transformer_, suffix=suffix_)
-            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_robustscaler,
-            #     feature_transformer_name=feature_transformer_, suffix=suffix_)
-            # if "youtube" not in dataset_:
-            #     run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_powertransformer,
-            #         feature_transformer_name=feature_transformer_, suffix=suffix_)
+            run(datasets[dataset_.lower()](), clf=clf_, feature_transformer_name=feature_transformer_, suffix=suffix_)
+            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_normalized,
+                feature_transformer_name=feature_transformer_, suffix=suffix_)
+            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_uniform,
+                feature_transformer_name=feature_transformer_, suffix=suffix_)
+            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_normal,
+                feature_transformer_name=feature_transformer_, suffix=suffix_)
+            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_robustscaler,
+                feature_transformer_name=feature_transformer_, suffix=suffix_)
+            if "youtube" not in dataset_:
+                run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_powertransformer,
+                    feature_transformer_name=feature_transformer_, suffix=suffix_)
             run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_logtransformer,
                 feature_transformer_name=feature_transformer_, suffix=suffix_)
             run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_lntransformer,
