@@ -8,7 +8,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # parser.add_argument('dataset', type=str)
     parser.add_argument('experiment', type=str)
-    parser.add_argument('metric', type=str)
+    # parser.add_argument('metric', type=str)
     parser.add_argument('-d', '--datasets', nargs='+', help='<Required> Add datasets', required=True)
     # parser.add_argument("--method", type=str, nargs="?", default=Keys.xgboost_default)
     # parser.add_argument("--split", type=str, nargs="?", default=Keys.cv5x2)
@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
     # dataset_ = parser.parse_args().dataset
     experiment_ = parser.parse_args().experiment
-    metric_ = parser.parse_args().metric
+    # metric_ = parser.parse_args().metric
     datasets_ = parser.parse_args().datasets
 
     # split_ = parser.parse_args().split
@@ -35,8 +35,11 @@ if __name__ == '__main__':
     if 'all' in datasets_:
         datasets_ = list(datasets.keys())
 
-    all_metrics = {'rmse': Keys.average_rmse, 'nrmse': Keys.average_nrmse}
+    all_metrics = {'rmse': Keys.average_rmse, 'nrmse': Keys.average_nrmse, 'rse': Keys.average_rse}
 
-    print_all_results_excel(datasets_, all_metrics[metric_].replace(' ', ''), experiment_,
-                            substring=f"__f_{Keys.transformer_normalized}",
-                            suffix=suffix_, from_text=not from_pkl_)
+    for metric_ in all_metrics.keys():
+        print(f"Metric: {metric_}")
+        print_all_results_excel(datasets_, all_metrics[metric_].replace(' ', ''), experiment_,
+                                substring=f"__f_{Keys.transformer_quantile_uniform}".replace(' ', ''),
+                                suffix=suffix_, from_text=not from_pkl_)
+        print("###########################################################################")

@@ -13,6 +13,7 @@ from src.experiments.print_results import print_all_results_excel
 from src.experiments.utils.alpha_search import AlphaSearch
 from src.experiments.utils.classifiers import LassoTuned, RidgeRegressionTuned, GradientBoostingRegressorWrapper
 from src.experiments.utils.constants import SEED, get_transformer, Keys
+from src.experiments.utils.evaluation import relative_squared_error
 
 base = os.path.dirname(os.path.realpath(__file__))
 
@@ -39,9 +40,15 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, featur
         rskf = RepeatedStratifiedKFold(n_splits=2, n_repeats=5, random_state=SEED)
     all_rmse = []
     all_nrmse = []
+    all_rse = []
 
     for i, (train_index, test_index) in enumerate(rskf.split(data.X, data.y)):
         if i in results[clf_name].keys():
+            if Keys.rse not in results[clf_name][i].keys():
+                print("Calculating RSE...")
+                results[clf_name][i][Keys.rse] = (
+                    relative_squared_error(data.ytest, results[clf_name][i][Keys.predictions]))
+                all_rse.append(results[clf_name][i][Keys.rse])
             print(f"Fold {i} already in results, skipping...")
             continue
         else:
@@ -93,13 +100,16 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, featur
         else:
             ytest = data.ytest
         nrmse = root_mean_squared_error(ytest, predictions) / (ytest.max() - ytest.min())
+        rse = relative_squared_error(ytest, predictions)
         all_nrmse.append(nrmse)
+        all_rse.append(rse)
 
         results[clf_name][i] = {Keys.clf: clf,
                                 Keys.predictions: predictions,
                                 Keys.error: error,
                                 Keys.rmse: score,
-                                Keys.nrmse: nrmse}
+                                Keys.nrmse: nrmse,
+                                Keys.rse: rse}
 
     if len(all_rmse) == 10:
         # print(f"Average RMSE {'normalized' if normalize_y else ''}:", np.mean(all_rmse))
@@ -107,7 +117,14 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, featur
                                   Keys.std_rmse: np.std(all_rmse)})
         results[clf_name].update({Keys.average_nrmse: np.mean(all_nrmse),
                                   Keys.std_nrmse: np.std(all_nrmse)})
+        results[clf_name].update({Keys.average_rse: np.mean(all_rse),
+                                  Keys.std_rse: np.std(all_rse)})
         save_results(results, NAME, dataset_, suffix=suffix)
+    elif len(all_rse) == 10:
+        results[clf_name].update({Keys.average_rse: np.mean(all_rse),
+                                  Keys.std_rse: np.std(all_rse)})
+    if Keys.average_rse not in results[clf_name].keys():
+        print("Average RSE was not added to the results :(")
     # print_results(results)
 
 
@@ -163,18 +180,18 @@ if __name__ == '__main__':
 
             dataset_ = 'all'
         else:
-            run(datasets[dataset_.lower()](), clf=clf_, feature_transformer_name=feature_transformer_, suffix=suffix_)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_normalized,
-                feature_transformer_name=feature_transformer_, suffix=suffix_)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_uniform,
-                feature_transformer_name=feature_transformer_, suffix=suffix_)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_normal,
-                feature_transformer_name=feature_transformer_, suffix=suffix_)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_robustscaler,
-                feature_transformer_name=feature_transformer_, suffix=suffix_)
-            if "youtube" not in dataset_:
-                run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_powertransformer,
-                    feature_transformer_name=feature_transformer_, suffix=suffix_)
+            # run(datasets[dataset_.lower()](), clf=clf_, feature_transformer_name=feature_transformer_, suffix=suffix_)
+            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_normalized,
+            #     feature_transformer_name=feature_transformer_, suffix=suffix_)
+            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_uniform,
+            #     feature_transformer_name=feature_transformer_, suffix=suffix_)
+            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_normal,
+            #     feature_transformer_name=feature_transformer_, suffix=suffix_)
+            # run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_robustscaler,
+            #     feature_transformer_name=feature_transformer_, suffix=suffix_)
+            # if "youtube" not in dataset_:
+            #     run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_powertransformer,
+            #         feature_transformer_name=feature_transformer_, suffix=suffix_)
             run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_logtransformer,
                 feature_transformer_name=feature_transformer_, suffix=suffix_)
             run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_lntransformer,

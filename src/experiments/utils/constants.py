@@ -22,6 +22,10 @@ class Keys:
     average_nrmse = "average NRMSE"
     std_nrmse = "std NRMSE"
 
+    rse = "RSE"
+    average_rse = "average RSE"
+    std_rse = "std RSE"
+
     clf = "clf"
     predictions = "predictions"
     average_predictions = "average predictions"

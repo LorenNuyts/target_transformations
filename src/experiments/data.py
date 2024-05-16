@@ -628,5 +628,5 @@ datasets = {"abalone": Abalone,
             "servo": Servo,
             "winequality": WineQuality,
             "youtube": YouTube,
-            # "youtubelg": YouTubeLg,
+            "youtubelg": YouTubeLg,
             }
