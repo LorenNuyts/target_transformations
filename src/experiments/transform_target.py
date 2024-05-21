@@ -4,6 +4,7 @@ import os
 import warnings
 
 import numpy as np
+from scipy.optimize._optimize import BracketError
 from sklearn.metrics import root_mean_squared_error
 from sklearn.model_selection import RepeatedStratifiedKFold, RepeatedKFold
 
@@ -172,7 +173,7 @@ def run_all_target_transformers(dataset: Dataset, clf, feature_transformer, suff
     try:
         run(dataset, clf=clf, target_transformer_name=Keys.transformer_powertransformer,
             feature_transformer_name=feature_transformer, suffix=suffix)
-    except ValueError:
+    except (ValueError, BracketError):
         print(f"PowerTransformer failed for {dataset.name()}")
 
     run(dataset, clf=clf, target_transformer_name=Keys.transformer_logtransformer,
