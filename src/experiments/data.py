@@ -53,7 +53,7 @@ class Dataset:
         self.missing_values = False
 
     def name(self) -> str:
-        return type(self).__name__
+        return type(self).__name__ + self.name_suffix
 
     def xgb_params(self, task, custom_params=None):
         if custom_params is None:

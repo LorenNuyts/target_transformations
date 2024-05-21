@@ -417,8 +417,8 @@ def print_results_excel(results: dict, metric: str):
     print(values)
 
 
-def print_all_results_excel(datasets: List[str], metric: str,  experiment_name, substring: str = None,
-                            suffix: str = default_suffix, from_text=True):
+def print_all_results_excel(datasets: List[str], metric: str,  experiment_name, present_substring: str = None,
+                            absent_substring: str = None, suffix: str = default_suffix, from_text=True):
     """
     Print results in Excel format
 
@@ -430,8 +430,10 @@ def print_all_results_excel(datasets: List[str], metric: str,  experiment_name, 
         Metric to print
     experiment_name: str
         The name of the experiments whose results are being printed
-    substring: str
+    present_substring: str
         Substring that the method name should contain
+    absent_substring: str
+        Substring that the method name should not contain
     suffix: str
         Suffix to add to the file name
     from_text: bool
@@ -445,7 +447,8 @@ def print_all_results_excel(datasets: List[str], metric: str,  experiment_name, 
         else:
             results = load_results(experiment_name, dataset, suffix=suffix)
         for method in results.keys():
-            if method == 'dataset' or (substring is not None and substring not in method):
+            if method == 'dataset' or (present_substring is not None and present_substring not in method) or (
+                    absent_substring is not None and absent_substring in method):
                 continue
             # if method not in all_results:
             #     all_results[method] = []

@@ -32,15 +32,20 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, featur
     if clf_name not in results:
         results[clf_name] = {}
 
-    data.load_dataset()
-
+    nb_splits = 2
+    nb_repeats = 5
     if data.task == Task.REGRESSION:
-        rskf = RepeatedKFold(n_splits=2, n_repeats=5, random_state=SEED)
+        rskf = RepeatedKFold(n_splits=nb_splits, n_repeats=nb_repeats, random_state=SEED)
     else:
-        rskf = RepeatedStratifiedKFold(n_splits=2, n_repeats=5, random_state=SEED)
+        rskf = RepeatedStratifiedKFold(n_splits=nb_splits, n_repeats=nb_repeats, random_state=SEED)
     all_rmse = []
     all_nrmse = []
     all_rse = []
+
+    if nb_splits*nb_repeats - 1 in results[clf_name].keys():
+        print("All folds already in results, skipping...")
+        return
+    data.load_dataset()
 
     for i, (train_index, test_index) in enumerate(rskf.split(data.X, data.y)):
         if i in results[clf_name].keys():
@@ -154,6 +159,28 @@ def no_alpha_search(clf, data):
     clf.fit(data.Xtrain, data.ytrain)
 
 
+def run_all_target_transformers(dataset: Dataset, clf, feature_transformer, suffix):
+    run(dataset, clf=clf, feature_transformer_name=feature_transformer, suffix=suffix)
+    run(dataset, clf=clf, target_transformer_name=Keys.transformer_normalized,
+        feature_transformer_name=feature_transformer, suffix=suffix)
+    run(dataset, clf=clf, target_transformer_name=Keys.transformer_quantile_uniform,
+        feature_transformer_name=feature_transformer, suffix=suffix)
+    run(dataset, clf=clf, target_transformer_name=Keys.transformer_quantile_normal,
+        feature_transformer_name=feature_transformer, suffix=suffix)
+    run(dataset, clf=clf, target_transformer_name=Keys.transformer_robustscaler,
+        feature_transformer_name=feature_transformer, suffix=suffix)
+    try:
+        run(dataset, clf=clf, target_transformer_name=Keys.transformer_powertransformer,
+            feature_transformer_name=feature_transformer, suffix=suffix)
+    except ValueError:
+        print(f"PowerTransformer failed for {dataset.name()}")
+
+    run(dataset, clf=clf, target_transformer_name=Keys.transformer_logtransformer,
+        feature_transformer_name=feature_transformer, suffix=suffix)
+    run(dataset, clf=clf, target_transformer_name=Keys.transformer_lntransformer,
+        feature_transformer_name=feature_transformer, suffix=suffix)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('dataset', type=str)
@@ -168,49 +195,20 @@ if __name__ == '__main__':
 
     all_datasets = list(datasets.keys())
 
-    for clf_ in DEFAULT_CLFS:
-        if dataset_ == 'all':
-            for dataset_ in all_datasets:
-                print(f"Running {dataset_}...")
-                run(datasets[dataset_](), clf=clf_, feature_transformer_name=feature_transformer_, suffix=suffix_)
-                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_normalized,
-                    feature_transformer_name=feature_transformer_, suffix=suffix_)
-                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_quantile_uniform,
-                    feature_transformer_name=feature_transformer_, suffix=suffix_)
-                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_quantile_normal,
-                    feature_transformer_name=feature_transformer_, suffix=suffix_)
-                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_robustscaler,
-                    feature_transformer_name=feature_transformer_, suffix=suffix_)
-                if "youtube" not in dataset_:
-                    run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_powertransformer,
-                        feature_transformer_name=feature_transformer_, suffix=suffix_)
-                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_logtransformer,
-                    feature_transformer_name=feature_transformer_, suffix=suffix_)
-                run(datasets[dataset_](), clf=clf_, target_transformer_name=Keys.transformer_lntransformer,
-                    feature_transformer_name=feature_transformer_, suffix=suffix_)
-
-            dataset_ = 'all'
-        else:
-            run(datasets[dataset_.lower()](), clf=clf_, feature_transformer_name=feature_transformer_, suffix=suffix_)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_normalized,
-                feature_transformer_name=feature_transformer_, suffix=suffix_)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_uniform,
-                feature_transformer_name=feature_transformer_, suffix=suffix_)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_quantile_normal,
-                feature_transformer_name=feature_transformer_, suffix=suffix_)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_robustscaler,
-                feature_transformer_name=feature_transformer_, suffix=suffix_)
-            if "youtube" not in dataset_:
-                run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_powertransformer,
-                    feature_transformer_name=feature_transformer_, suffix=suffix_)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_logtransformer,
-                feature_transformer_name=feature_transformer_, suffix=suffix_)
-            run(datasets[dataset_.lower()](), clf=clf_, target_transformer_name=Keys.transformer_lntransformer,
-                feature_transformer_name=feature_transformer_, suffix=suffix_)
-
     if dataset_ == 'all':
-        print("RMSE:")
-        print_all_results_excel(all_datasets, Keys.average_rmse, NAME, suffix=suffix_)
-        print("###########################################################################")
-        print("NRMSE:")
-        print_all_results_excel(all_datasets, Keys.average_nrmse, NAME, suffix=suffix_)
+        for dataset_ in all_datasets:
+            print(f"Running {dataset_}...")
+            if feature_transformer_ == "PowerTransformer" and dataset_ == "onlinenewspopularity":
+                continue
+            for clf_ in DEFAULT_CLFS:
+                run_all_target_transformers(datasets[dataset_](), clf_, feature_transformer_, suffix_)
+    else:
+        for clf_ in DEFAULT_CLFS:
+            run_all_target_transformers(dataset_.lower()(), clf_, feature_transformer_, suffix_)
+
+    # if dataset_ == 'all':
+    #     print("RMSE:")
+    #     print_all_results_excel(all_datasets, Keys.average_rmse, NAME, suffix=suffix_)
+    #     print("###########################################################################")
+    #     print("NRMSE:")
+    #     print_all_results_excel(all_datasets, Keys.average_nrmse, NAME, suffix=suffix_)

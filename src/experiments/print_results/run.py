@@ -40,6 +40,7 @@ if __name__ == '__main__':
     for metric_ in all_metrics.keys():
         print(f"Metric: {metric_}")
         print_all_results_excel(datasets_, all_metrics[metric_].replace(' ', ''), experiment_,
-                                substring=f"__f_{Keys.transformer_quantile_uniform}".replace(' ', ''),
+                                present_substring=f"__f_{Keys.transformer_powertransformer}".replace(' ', ''),
+                                # absent_substring='__f_',
                                 suffix=suffix_, from_text=not from_pkl_)
         print("###########################################################################")
