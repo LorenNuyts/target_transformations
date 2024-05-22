@@ -205,7 +205,7 @@ if __name__ == '__main__':
                 run_all_target_transformers(datasets[dataset_](), clf_, feature_transformer_, suffix_)
     else:
         for clf_ in DEFAULT_CLFS:
-            run_all_target_transformers(dataset_.lower()(), clf_, feature_transformer_, suffix_)
+            run_all_target_transformers(datasets[dataset_.lower()](), clf_, feature_transformer_, suffix_)
 
     # if dataset_ == 'all':
     #     print("RMSE:")
