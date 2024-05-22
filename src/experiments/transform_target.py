@@ -43,9 +43,10 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, featur
     all_nrmse = []
     all_rse = []
 
-    if nb_splits*nb_repeats - 1 in results[clf_name].keys():
-        print("All folds already in results, skipping...")
-        return
+    # if nb_splits*nb_repeats - 1 in results[clf_name].keys():
+    #     print("All folds already in results, skipping...")
+    #     # save_results(results, NAME, dataset_, suffix=suffix)
+    #     return
     data.load_dataset()
 
     for i, (train_index, test_index) in enumerate(rskf.split(data.X, data.y)):
@@ -126,7 +127,6 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, featur
                                 Keys.rmse: score,
                                 Keys.nrmse: nrmse,
                                 Keys.rse: rse}
-
     if len(all_rmse) == 10:
         # print(f"Average RMSE {'normalized' if normalize_y else ''}:", np.mean(all_rmse))
         results[clf_name].update({Keys.average_rmse: np.mean(all_rmse),
@@ -202,9 +202,11 @@ if __name__ == '__main__':
             if feature_transformer_ == "PowerTransformer" and dataset_ == "onlinenewspopularity":
                 continue
             for clf_ in DEFAULT_CLFS:
+                print(f"Running regressor {clf_.name}...")
                 run_all_target_transformers(datasets[dataset_](), clf_, feature_transformer_, suffix_)
     else:
         for clf_ in DEFAULT_CLFS:
+            print(f"Running regressor {clf_.name}...")
             run_all_target_transformers(datasets[dataset_.lower()](), clf_, feature_transformer_, suffix_)
 
     # if dataset_ == 'all':
