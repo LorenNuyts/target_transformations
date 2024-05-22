@@ -43,10 +43,10 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, featur
     all_nrmse = []
     all_rse = []
 
-    if nb_splits*nb_repeats - 1 in results[clf_name].keys():
-        print("All folds already in results, skipping...")
-        # save_results(results, NAME, dataset_, suffix=suffix)
-        return
+    # if nb_splits*nb_repeats - 1 in results[clf_name].keys():
+    #     print("All folds already in results, skipping...")
+    #     # save_results(results, NAME, dataset_, suffix=suffix)
+    #     return
     data.load_dataset()
 
     for i, (train_index, test_index) in enumerate(rskf.split(data.X, data.y)):

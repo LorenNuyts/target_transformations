@@ -41,6 +41,9 @@ class Keys:
     transformer_logtransformer = "LogTransformer (log10)"
     transformer_lntransformer = "LogTransformer (ln)"
     transformer_robustscaler = "RobustScaler"
+    all_transformers = [transformer_normalized, transformer_quantile_uniform, transformer_quantile_normal,
+                        transformer_robustscaler, transformer_powertransformer, transformer_logtransformer,
+                        transformer_lntransformer]
 
 
 def get_transformer(transformer_name):

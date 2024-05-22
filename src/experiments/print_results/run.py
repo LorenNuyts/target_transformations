@@ -2,7 +2,8 @@ import argparse
 
 from src.experiments.data import datasets
 from src.experiments.print_results import print_all_results_excel
-from src.experiments.utils import default_suffix, Keys
+from src.experiments.transform_target import DEFAULT_CLFS
+from src.experiments.utils import default_suffix, Keys, get_clf_full_name
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -36,11 +37,15 @@ if __name__ == '__main__':
         datasets_ = list(datasets.keys())
 
     all_metrics = {'rmse': Keys.average_rmse, 'nrmse': Keys.average_nrmse, 'rse': Keys.average_rse}
+    feature_transformer_name = Keys.transformer_normalized
 
     for metric_ in all_metrics.keys():
         print(f"Metric: {metric_}")
         print_all_results_excel(datasets_, all_metrics[metric_].replace(' ', ''), experiment_,
-                                present_substring=f"__f_{Keys.transformer_powertransformer}".replace(' ', ''),
+                                present_substring=f"__f_{feature_transformer_name}".replace(' ', ''),
                                 # absent_substring='__f_',
-                                suffix=suffix_, from_text=not from_pkl_)
+                                suffix=suffix_, from_text=not from_pkl_,
+                                column_order=[get_clf_full_name(clf, transformer,
+                                                                feature_transformer_name).replace(' ', '')
+                                              for clf in DEFAULT_CLFS for transformer in [None] + Keys.all_transformers])
         print("###########################################################################")

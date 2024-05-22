@@ -418,7 +418,8 @@ def print_results_excel(results: dict, metric: str):
 
 
 def print_all_results_excel(datasets: List[str], metric: str,  experiment_name, present_substring: str = None,
-                            absent_substring: str = None, suffix: str = default_suffix, from_text=True):
+                            absent_substring: str = None, suffix: str = default_suffix, from_text=True,
+                            column_order=None):
     """
     Print results in Excel format
 
@@ -462,6 +463,9 @@ def print_all_results_excel(datasets: List[str], metric: str,  experiment_name, 
     #     values[method] = all_results[method]
 
     # Transform values to excel format such that I can copy paste them in excel
+
+    if column_order is not None:
+        values = values[column_order]
     print(values.to_csv(sep='\t'))
 
 
