@@ -37,7 +37,7 @@ if __name__ == '__main__':
         datasets_ = list(datasets.keys())
 
     all_metrics = {'rmse': Keys.average_rmse, 'nrmse': Keys.average_nrmse, 'rse': Keys.average_rse}
-    feature_transformer_name = Keys.transformer_normalized
+    feature_transformer_name = Keys.transformer_quantile_normal
 
     for metric_ in all_metrics.keys():
         print(f"Metric: {metric_}")

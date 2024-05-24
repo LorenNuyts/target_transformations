@@ -608,6 +608,22 @@ class YouTubeLg(Dataset):
             self.minmax_normalize()
 
 
+class YouTubePlus(Dataset):
+    def __init__(self):
+        super().__init__(Task.REGRESSION)
+        self.missing_values = True
+
+    def load_dataset(self):
+        if self.X is None or self.y is None:
+            print(f"loading youtube h5 file")
+            df = pd.read_hdf(f"{self.data_dir}/youtube+.h5", key='dataset')
+
+            # noinspection PyUnresolvedReferences
+            self.y = df.pop('views')
+            self.X = df
+            self.minmax_normalize()
+
+
 datasets = {"abalone": Abalone,
             "autompg": AutoMPG,  # Missing values
             "bikesharing": BikeSharing,  # Does not converge
@@ -629,4 +645,5 @@ datasets = {"abalone": Abalone,
             "winequality": WineQuality,
             "youtube": YouTube,
             "youtubelg": YouTubeLg,
+            "youtube+": YouTubePlus,
             }
