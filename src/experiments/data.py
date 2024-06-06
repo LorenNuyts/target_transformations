@@ -405,6 +405,42 @@ class BikeSharing(Dataset):
             self.minmax_normalize()
 
 
+class BikeSharingFull(Dataset):
+    def __init__(self):
+        super().__init__(Task.REGRESSION)
+
+    def load_dataset(self):
+        if self.X is None or self.y is None:
+            print(f"loading bikesharingfull h5 file")
+            self.X = pd.read_hdf(f"{self.data_dir}/BikeSharingFull.h5", key='X')
+            self.y = pd.read_hdf(f"{self.data_dir}/BikeSharingFull.h5", key='y')
+            self.encode_object_types()
+            self.minmax_normalize()
+
+
+class BikeSharingNormalized(Dataset):
+    def __init__(self):
+        super().__init__(Task.REGRESSION)
+
+    def load_dataset(self):
+        if self.X is None or self.y is None:
+            print(f"loading bikesharingfull h5 file")
+            X = pd.read_hdf(f"{self.data_dir}/BikeSharingFull.h5", key='X')
+
+            # noinspection PyUnresolvedReferences
+            total_users = X['casual'] + X['registered']
+
+            # noinspection PyUnresolvedReferences
+            self.X = X.drop(['casual', 'registered'], axis=1)
+            y = pd.read_hdf(f"{self.data_dir}/BikeSharingFull.h5", key='y')
+
+            # noinspection PyUnresolvedReferences
+            self.y = y/total_users
+
+            self.encode_object_types()
+            self.minmax_normalize()
+
+
 class Challenger(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
@@ -655,6 +691,8 @@ class YouTubeLgMin(Dataset):
 datasets = {"abalone": Abalone,
             "autompg": AutoMPG,  # Missing values
             "bikesharing": BikeSharing,  # Does not converge
+            "bikesharingfull": BikeSharingFull,
+            "bikesharingnormalized": BikeSharingNormalized,
             "powerplant": CombinedCyclePowerPlant,
             # "challenger": Challenger, # Does not converge
             # "computerhardware": ComputerHardware, # What is the target?
