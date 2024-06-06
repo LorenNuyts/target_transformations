@@ -26,7 +26,8 @@ DEFAULT_CLFS = [
 
 NAME = "transform_target"
 
-feature_transform_condition_default = skewed_columns
+# feature_transform_condition_default = skewed_columns
+feature_transform_condition_default = None
 
 
 def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, feature_transformer_name=None,
