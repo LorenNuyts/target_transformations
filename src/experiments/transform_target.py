@@ -8,9 +8,9 @@ from scipy.optimize._optimize import BracketError
 from sklearn.metrics import root_mean_squared_error
 from sklearn.model_selection import RepeatedStratifiedKFold, RepeatedKFold
 
+from src.algorithms import skewed_columns
 from src.experiments.data import Dataset, Task, datasets
 from src.experiments.utils import load_results, get_clf_full_name, save_results
-from src.experiments.print_results import print_all_results_excel
 from src.experiments.utils.alpha_search import AlphaSearch
 from src.experiments.utils.classifiers import LassoTuned, RidgeRegressionTuned, GradientBoostingRegressorWrapper
 from src.experiments.utils.constants import SEED, get_transformer, Keys
@@ -26,10 +26,14 @@ DEFAULT_CLFS = [
 
 NAME = "transform_target"
 
+feature_transform_condition_default = skewed_columns
 
-def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, feature_transformer_name=None, suffix=""):
+
+def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, feature_transformer_name=None,
+        feature_transform_condition=feature_transform_condition_default, suffix=""):
     results = load_results(NAME, dataset_, suffix=suffix, reset=False)
-    clf_name = get_clf_full_name(clf, target_transformer_name, feature_transformer_name)
+    clf_name = get_clf_full_name(clf, target_transformer_name, feature_transformer_name,
+                                 feature_transform_condition is not None)
     if clf_name not in results:
         results[clf_name] = {}
 
@@ -51,21 +55,6 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, featur
 
     for i, (train_index, test_index) in enumerate(rskf.split(data.X, data.y)):
         if i in results[clf_name].keys():
-            if Keys.rse not in results[clf_name][i].keys():
-                print("Calculating RSE...")
-                data.cross_validation(train_index, test_index, force=True)
-                data.split_validation_set()
-                if data.missing_values:
-                    data.impute_missing_values()
-                if target_transformer_name is not None:
-                    transformer = get_transformer(target_transformer_name)
-                    data.transform_target_custom(transformer)
-                if feature_transformer_name is not None:
-                    feature_transformer = get_transformer(feature_transformer_name)
-                    data.transform_features_custom(feature_transformer)
-                results[clf_name][i][Keys.rse] = (
-                    relative_squared_error(data.ytest, results[clf_name][i][Keys.predictions]))
-                all_rse.append(results[clf_name][i][Keys.rse])
             print(f"Fold {i} already in results, skipping...")
             continue
         else:
@@ -80,7 +69,7 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, featur
             data.transform_target_custom(transformer)
         if feature_transformer_name is not None:
             feature_transformer = get_transformer(feature_transformer_name)
-            data.transform_features_custom(feature_transformer)
+            data.transform_features_custom(feature_transformer, feature_transform_condition)
 
         clf = copy.deepcopy(clf)
 

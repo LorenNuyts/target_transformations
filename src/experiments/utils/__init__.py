@@ -154,7 +154,8 @@ def get_file_name_base(dataset_name, suffix=None):
            f'{suffix}'
 
 
-def get_clf_full_name(clf, target_transformer_name=None, feature_transformer_name=None):
+def get_clf_full_name(clf, target_transformer_name=None, feature_transformer_name=None,
+                      feature_transform_condition=False):
     """
     Get the full name of a classifier
 
@@ -166,6 +167,8 @@ def get_clf_full_name(clf, target_transformer_name=None, feature_transformer_nam
         Name of the target transformer
     feature_transformer_name: str, optional, default None
         Name of the feature transformer
+    feature_transform_condition: bool, optional, default False
+        Whether the feature transformer is conditional
 
     Returns
     -------
@@ -173,6 +176,7 @@ def get_clf_full_name(clf, target_transformer_name=None, feature_transformer_nam
         Full name of the classifier
     """
     return (f"{clf.name}{'__f_' + feature_transformer_name if feature_transformer_name is not None else ''}"
+            f"{'_cond' if feature_transform_condition and feature_transformer_name is not None else ''}"
             f"{'__' + target_transformer_name if target_transformer_name is not None else ''}")
 
 

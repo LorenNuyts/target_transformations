@@ -1,4 +1,5 @@
 import os
+import warnings
 from typing import Optional
 
 import joblib
@@ -238,16 +239,28 @@ class Dataset:
         # self.ytest = transformer.transform(self.ytest.values.reshape(-1, 1)).ravel()
         self.other_params["target_transformer"] = transformer
 
-    def transform_features_custom(self, transformer):
+    def transform_features_custom(self, transformer, condition=None):
         if self.X is None:
             raise RuntimeError("data not loaded")
         if self.Xtrain is None or self.Xtest is None:
             raise RuntimeError("train and test sets not loaded")
 
-        self.Xtrain = transformer.fit_transform(self.Xtrain.values)
+        if condition is not None:
+            columns = condition(self.Xtrain)
+        else:
+            columns = self.Xtrain.columns
+
+        self.Xtrain.loc[:, columns] = transformer.fit_transform(self.Xtrain.loc[:, columns].values)
         if self.Xval is not None:
-            self.Xval = transformer.transform(self.Xval.values)
-        self.Xtest = transformer.transform(self.Xtest.values)
+            self.Xval.loc[:, columns] = transformer.transform(self.Xval.loc[:, columns].values)
+        # catch warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.Xtest.loc[:, columns] = transformer.transform(self.Xtest.loc[:, columns].values)
+        # self.Xtrain = transformer.fit_transform(self.Xtrain.values)
+        # if self.Xval is not None:
+        #     self.Xval = transformer.transform(self.Xval.values)
+        # self.Xtest = transformer.transform(self.Xtest.values)
         self.other_params["feature_transformer"] = transformer
 
     def discretize(self, nb_bins: int = 10, mode: str = "equal_width") -> None:
