@@ -1,6 +1,7 @@
 import math
 import os
 import re
+import warnings
 from typing import List
 
 import numpy as np
@@ -440,33 +441,35 @@ def print_all_results_excel(datasets: List[str], metric: str,  experiment_name, 
     from_text: bool
         Whether to load the results from a txt file. If False, the results are loaded from a pickle file
     """
-    # all_results = {}
-    values = pd.DataFrame(index=datasets, columns=[])
-    for dataset in datasets:
-        if from_text:
-            results = load_results_txt(experiment_name, dataset, suffix=suffix)
-        else:
-            results = load_results(experiment_name, dataset, suffix=suffix)
-        for method in results.keys():
-            if method == 'dataset' or (present_substring is not None and present_substring not in method) or (
-                    absent_substring is not None and absent_substring in method):
-                continue
-            # if method not in all_results:
-            #     all_results[method] = []
-            # all_results[method].append(results[method][metric])
-            values.at[dataset, method] = results[method][metric]
-        # values.loc[dataset] = [results[method][metric] for method in results.keys() if method != 'dataset' and (
-        #         substring is None or substring in method)]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        # all_results = {}
+        values = pd.DataFrame(index=datasets, columns=[])
+        for dataset in datasets:
+            if from_text:
+                results = load_results_txt(experiment_name, dataset, suffix=suffix)
+            else:
+                results = load_results(experiment_name, dataset, suffix=suffix)
+            for method in results.keys():
+                if method == 'dataset' or (present_substring is not None and present_substring not in method) or (
+                        absent_substring is not None and absent_substring in method):
+                    continue
+                # if method not in all_results:
+                #     all_results[method] = []
+                # all_results[method].append(results[method][metric])
+                values.at[dataset, method] = results[method][metric]
+            # values.loc[dataset] = [results[method][metric] for method in results.keys() if method != 'dataset' and (
+            #         substring is None or substring in method)]
 
-    # values = pd.DataFrame(index=datasets, columns=list(all_results.keys()))
-    # for i, method in enumerate(all_results.keys()):
-    #     values[method] = all_results[method]
+        # values = pd.DataFrame(index=datasets, columns=list(all_results.keys()))
+        # for i, method in enumerate(all_results.keys()):
+        #     values[method] = all_results[method]
 
-    # Transform values to excel format such that I can copy paste them in excel
+        # Transform values to excel format such that I can copy paste them in excel
 
-    if column_order is not None:
-        values = values[column_order]
-    print(values.to_csv(sep='\t'))
+        if column_order is not None:
+            values = values[column_order]
+        print(values.to_csv(sep='\t'))
 
 
 def load_results_txt(experiment_name, dataset_name, suffix=None):

@@ -571,6 +571,32 @@ class OnlineNewsPopularity(Dataset):
             self.minmax_normalize()
 
 
+class OnlineNewsPopularityFull(Dataset):
+    def __init__(self):
+        super().__init__(Task.REGRESSION)
+
+    def load_dataset(self):
+        if self.X is None or self.y is None:
+            full_dataset = fetch_ucirepo(id=332)
+            self.X = full_dataset.data.original.drop(columns=['url', ' shares'])
+            self.y = full_dataset.data.targets.squeeze()
+            self.minmax_normalize()
+
+
+class OnlineNewsPopularityNormalized(Dataset):
+    def __init__(self):
+        super().__init__(Task.REGRESSION)
+
+    def load_dataset(self):
+        if self.X is None or self.y is None:
+            full_dataset = fetch_ucirepo(id=332)
+            self.X = full_dataset.data.original.drop(columns=['url', ' shares'])
+            y = full_dataset.data.targets.squeeze()
+            self.y = y/self.X[' timedelta']
+            self.X = self.X.drop(columns=[' timedelta'])
+            self.minmax_normalize()
+
+
 class Parkinsons1(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
@@ -691,8 +717,8 @@ class YouTubeLgMin(Dataset):
 datasets = {"abalone": Abalone,
             "autompg": AutoMPG,  # Missing values
             "bikesharing": BikeSharing,  # Does not converge
-            "bikesharingfull": BikeSharingFull,
-            "bikesharingnormalized": BikeSharingNormalized,
+            # "bikesharingfull": BikeSharingFull,
+            # "bikesharingnormalized": BikeSharingNormalized,
             "powerplant": CombinedCyclePowerPlant,
             # "challenger": Challenger, # Does not converge
             # "computerhardware": ComputerHardware, # What is the target?
@@ -706,6 +732,8 @@ datasets = {"abalone": Abalone,
             # "parkinsons1": Parkinsons1, # Does not converge
             # "parkinsons2": Parkinsons2, # Does not converge
             "onlinenewspopularity": OnlineNewsPopularity,  # Does not converge
+            "onlinenewspopularityfull": OnlineNewsPopularityFull,
+            "onlinenewspopularitynormalized": OnlineNewsPopularityNormalized,
             "realestatevaluation": RealEstateValuation,
             "servo": Servo,
             "winequality": WineQuality,
