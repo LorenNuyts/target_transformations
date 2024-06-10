@@ -668,6 +668,31 @@ class YouTube(Dataset):
             self.minmax_normalize()
 
 
+class YouTubeNormalized(Dataset):
+    def __init__(self):
+        super().__init__(Task.REGRESSION)
+
+    def load_dataset(self):
+        if self.X is None or self.y is None:
+            print(f"loading youtube h5 file")
+            df = pd.read_hdf(f"{self.data_dir}/youtube.h5", key='dataset')
+
+            # noinspection PyUnresolvedReferences
+            df_publish = df[['publish_year', 'publish_month', 'publish_day']]
+            df_publish = df_publish.rename(columns=
+                                           {'publish_year': 'year', 'publish_month': 'month', 'publish_day': 'day'})
+            df_publish = df_publish.astype(int)
+            publish_dates = pd.to_datetime(df_publish, format='%Y%m%d')
+            max_date = publish_dates.max()
+            time_online = max_date - publish_dates
+
+            # noinspection PyUnresolvedReferences
+            self.y = df.pop('views') / (time_online.dt.days + 1)
+            # noinspection PyUnresolvedReferences
+            self.X = df.drop(['publish_year', 'publish_month', 'publish_day'], axis=1)
+            self.minmax_normalize()
+
+
 class YouTubeLg(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
@@ -738,6 +763,7 @@ datasets = {"abalone": Abalone,
             "servo": Servo,
             "winequality": WineQuality,
             "youtube": YouTube,
+            "youtubenormalized": YouTubeNormalized,
             "youtubelg": YouTubeLg,
             "youtube+": YouTubePlus,
             "youtubelg-": YouTubeLgMin,
