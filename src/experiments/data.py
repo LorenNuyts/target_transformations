@@ -146,23 +146,23 @@ class Dataset:
             self.Xtest = self.X.iloc[self.Itest]
             self.ytest = self.y.iloc[self.Itest]
 
-    def split_validation_set(self, split_fraction=0.5, seed=SEED):
+    def split_validation_set(self, split_fraction=0.7, seed=SEED):
         if self.Xtrain is None or self.ytrain is None:
             raise RuntimeError("training data not loaded")
 
         np.random.seed(seed)
-        indices = np.random.permutation(self.Xtrain.shape[0])
+        indices = np.random.permutation(self.Xtrain.index)
 
         m = int(self.Xtrain.shape[0] * split_fraction)
         self.Itrain = indices[0:m]
         self.Ival = indices[m:]
 
         # First validation set, because otherwise the training set has already changed!
-        self.Xval = self.Xtrain.iloc[self.Ival]
-        self.yval = self.ytrain.iloc[self.Ival]
+        self.Xval = self.Xtrain.loc[self.Ival]
+        self.yval = self.ytrain.loc[self.Ival]
 
-        self.Xtrain = self.Xtrain.iloc[self.Itrain]
-        self.ytrain = self.ytrain.iloc[self.Itrain]
+        self.Xtrain = self.Xtrain.loc[self.Itrain]
+        self.ytrain = self.ytrain.loc[self.Itrain]
 
     def _load_ucirepo(self, name, data_id, force=False) -> (pd.DataFrame, pd.DataFrame):
         if not os.path.exists(f"{self.data_dir}/{name}.h5") or force:
@@ -203,6 +203,20 @@ class Dataset:
         X_scaled = min_max_scaler.fit_transform(X)
         df = pd.DataFrame(X_scaled, columns=self.X.columns)
         self.X = df
+
+    def minmax_normalize_after_split(self):
+        if self.Xtrain is None:
+            raise RuntimeError("data not split in train and test sets")
+
+        # Xtrain = self.Xtrain.values
+        min_max_scaler = preprocessing.MinMaxScaler()
+        Xtrain_scaled = min_max_scaler.fit_transform(self.Xtrain.values)
+        self.Xtrain = pd.DataFrame(Xtrain_scaled, columns=self.Xtrain.columns)
+        if self.Xval is not None:
+            Xval_scaled = min_max_scaler.transform(self.Xval.values)
+            self.Xval = pd.DataFrame(Xval_scaled, columns=self.Xval.columns)
+        Xtest_scaled = min_max_scaler.transform(self.Xtest.values)
+        self.Xtest = pd.DataFrame(Xtest_scaled, columns=self.Xtest.columns)
 
     def encode_object_types(self):
         cat_columns = self.X.select_dtypes(['object']).columns
@@ -262,6 +276,28 @@ class Dataset:
         #     self.Xval = transformer.transform(self.Xval.values)
         # self.Xtest = transformer.transform(self.Xtest.values)
         self.other_params["feature_transformer"] = transformer
+
+    def transform_contextual(self):
+        if self.other_params['contextual_transform_feature'] is None:
+            raise ValueError("No feature for contextual transformation provided")
+        feature_name = self.other_params['contextual_transform_feature']
+        train_values = self.X.iloc[self.Itrain][feature_name]
+        self.ytrain = self.ytrain / train_values
+        self.Xtrain.drop(feature_name, axis=1, inplace=True)
+        if self.Xval is not None:
+            val_values = self.X.iloc[self.Ival][feature_name]
+            self.yval = self.yval / val_values
+            self.Xval.drop(feature_name, axis=1, inplace=True)
+        test_values = self.X.iloc[self.Itest][feature_name]
+        self.ytest = self.ytest / test_values
+        self.Xtest.drop(feature_name, axis=1, inplace=True)
+
+    def inverse_contextual_transform(self, predictions):
+        if self.other_params['contextual_transform_feature'] is None:
+            raise ValueError("No feature for contextual transformation provided")
+        feature_name = self.other_params['contextual_transform_feature']
+        test_values = self.X.iloc[self.Itest][feature_name]
+        return predictions * test_values
 
     def discretize(self, nb_bins: int = 10, mode: str = "equal_width") -> None:
         """
@@ -376,7 +412,7 @@ class Abalone(Dataset):
         if self.X is None or self.y is None:
             self.X, self.y = self._load_ucirepo("abalone", data_id=1)
             self.encode_object_types()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
             self.y = self.y.squeeze()
 
@@ -390,7 +426,7 @@ class AutoMPG(Dataset):
         if self.X is None or self.y is None:
             self.X, self.y = self._load_ucirepo("AutoMPG", data_id=9)
             self.y = self.y.squeeze()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class BikeSharing(Dataset):
@@ -402,7 +438,7 @@ class BikeSharing(Dataset):
             self.X, self.y = self._load_ucirepo("BikeSharing", data_id=275)
             self.y = self.y.squeeze()
             self.encode_object_types()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class BikeSharingFull(Dataset):
@@ -415,7 +451,7 @@ class BikeSharingFull(Dataset):
             self.X = pd.read_hdf(f"{self.data_dir}/BikeSharingFull.h5", key='X')
             self.y = pd.read_hdf(f"{self.data_dir}/BikeSharingFull.h5", key='y')
             self.encode_object_types()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class BikeSharingNormalized(Dataset):
@@ -438,7 +474,7 @@ class BikeSharingNormalized(Dataset):
             self.y = y/total_users
 
             self.encode_object_types()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class Challenger(Dataset):
@@ -449,7 +485,7 @@ class Challenger(Dataset):
         if self.X is None or self.y is None:
             self.X, self.y = self._load_ucirepo("Challenger", data_id=92)
             self.y = self.y.squeeze()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class CombinedCyclePowerPlant(Dataset):
@@ -460,7 +496,7 @@ class CombinedCyclePowerPlant(Dataset):
         if self.X is None or self.y is None:
             self.X, self.y = self._load_ucirepo("CombinedCyclePowerPlant", data_id=294)
             self.y = self.y.squeeze()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class ComputerHardware(Dataset):
@@ -471,7 +507,7 @@ class ComputerHardware(Dataset):
         if self.X is None or self.y is None:
             self.X, self.y = self._load_ucirepo("ComputerHardware", data_id=29)
             self.y = self.y.squeeze()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class ConcreteCompressingStrength(Dataset):
@@ -482,7 +518,7 @@ class ConcreteCompressingStrength(Dataset):
         if self.X is None or self.y is None:
             self.X, self.y = self._load_ucirepo("ConcreteCompressingStrength", data_id=165)
             self.y = self.y.squeeze()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class EnergyEfficiency1(Dataset):
@@ -496,7 +532,25 @@ class EnergyEfficiency1(Dataset):
         if self.X is None or self.y is None:
             self.X, self.y = self._load_ucirepo("EnergyEfficiency", data_id=242)
             self.y = self.y['Y1'].squeeze()
-            self.minmax_normalize()
+            # self.minmax_normalize()
+
+
+class EnergyEfficiency1Normalized5(Dataset):
+    """
+    Energy efficiency dataset from UCI repository, predicting heating load (Y1), normalized with the overall height
+    feature (X5).
+    """
+    def __init__(self):
+        super().__init__(Task.REGRESSION)
+
+    def load_dataset(self):
+        if self.X is None or self.y is None:
+            self.X, self.y = self._load_ucirepo("EnergyEfficiency", data_id=242)
+            self.y = self.y['Y1'].squeeze()
+            self.other_params['contextual_transform_feature'] = 'X5'
+            # overall_height = self.X.pop('X5')
+            # self.y = self.y / overall_height
+            # self.minmax_normalize()
 
 
 class EnergyEfficiency2(Dataset):
@@ -510,7 +564,7 @@ class EnergyEfficiency2(Dataset):
         if self.X is None or self.y is None:
             self.X, self.y = self._load_ucirepo("EnergyEfficiency", data_id=242)
             self.y = self.y['Y2'].squeeze()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class HeartFailure(Dataset):
@@ -521,7 +575,7 @@ class HeartFailure(Dataset):
         if self.X is None or self.y is None:
             self.X, self.y = self._load_ucirepo("HeartFailure", data_id=519)
             self.y = self.y.squeeze()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class Iris(MulticlassDataset):
@@ -533,7 +587,7 @@ class Iris(MulticlassDataset):
             self.X, self.y = self._load_ucirepo("Iris", data_id=53)
             self.y = self.y.squeeze()
             self.encode_y()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class LiverDisorder(Dataset):
@@ -544,7 +598,7 @@ class LiverDisorder(Dataset):
         if self.X is None or self.y is None:
             self.X, self.y = self._load_ucirepo("LiverDisorder", data_id=60)
             self.y = self.y.squeeze()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class Obesity(Dataset):
@@ -557,7 +611,7 @@ class Obesity(Dataset):
             self.y = self.y.squeeze()
             self.encode_object_types()
             self.encode_y()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class OnlineNewsPopularity(Dataset):
@@ -568,7 +622,7 @@ class OnlineNewsPopularity(Dataset):
         if self.X is None or self.y is None:
             self.X, self.y = self._load_ucirepo("OnlineNewsPopularity", data_id=332)
             self.y = self.y.squeeze()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class OnlineNewsPopularityFull(Dataset):
@@ -580,7 +634,7 @@ class OnlineNewsPopularityFull(Dataset):
             full_dataset = fetch_ucirepo(id=332)
             self.X = full_dataset.data.original.drop(columns=['url', ' shares'])
             self.y = full_dataset.data.targets.squeeze()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class OnlineNewsPopularityNormalized(Dataset):
@@ -591,10 +645,11 @@ class OnlineNewsPopularityNormalized(Dataset):
         if self.X is None or self.y is None:
             full_dataset = fetch_ucirepo(id=332)
             self.X = full_dataset.data.original.drop(columns=['url', ' shares'])
-            y = full_dataset.data.targets.squeeze()
-            self.y = y/self.X[' timedelta']
-            self.X = self.X.drop(columns=[' timedelta'])
-            self.minmax_normalize()
+            self.y = full_dataset.data.targets.squeeze()
+            self.other_params['contextual_transform_feature'] = ' timedelta'
+            # self.y = y/self.X[' timedelta']
+            # self.X = self.X.drop(columns=[' timedelta'])
+            # self.minmax_normalize()
 
 
 class Parkinsons1(Dataset):
@@ -605,7 +660,7 @@ class Parkinsons1(Dataset):
         if self.X is None or self.y is None:
             self.X, self.y = self._load_ucirepo("Parkinsons", data_id=189)
             self.y = self.y['motor_UPDRS'].squeeze()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class Parkinsons2(Dataset):
@@ -616,7 +671,7 @@ class Parkinsons2(Dataset):
         if self.X is None or self.y is None:
             self.X, self.y = self._load_ucirepo("Parkinsons", data_id=189)
             self.y = self.y['total_UPDRS'].squeeze()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class RealEstateValuation(Dataset):
@@ -627,7 +682,7 @@ class RealEstateValuation(Dataset):
         if self.X is None or self.y is None:
             self.X, self.y = self._load_ucirepo("RealEstateValuation", data_id=477)
             self.y = self.y.squeeze()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class Servo(Dataset):
@@ -639,7 +694,7 @@ class Servo(Dataset):
             self.X, self.y = self._load_ucirepo("Servo", data_id=87)
             self.y = self.y.squeeze()
             self.encode_object_types()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class WineQuality(Dataset):
@@ -650,7 +705,7 @@ class WineQuality(Dataset):
         if self.X is None or self.y is None:
             self.X, self.y = self._load_ucirepo("WineQuality", data_id=186)
             self.y = self.y.squeeze()
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class YouTube(Dataset):
@@ -665,7 +720,7 @@ class YouTube(Dataset):
             # noinspection PyUnresolvedReferences
             self.y = df.pop('views')
             self.X = df
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class YouTubeNormalized(Dataset):
@@ -687,10 +742,13 @@ class YouTubeNormalized(Dataset):
             time_online = max_date - publish_dates
 
             # noinspection PyUnresolvedReferences
-            self.y = df.pop('views') / (time_online.dt.days + 1)
+            self.y = df.pop('views')
+            # self.y = df.pop('views') / (time_online.dt.days + 1)
             # noinspection PyUnresolvedReferences
             self.X = df.drop(['publish_year', 'publish_month', 'publish_day'], axis=1)
-            self.minmax_normalize()
+            self.X['time_online'] = time_online.dt.days + 1
+            self.other_params['contextual_transform_feature'] = 'time_online'
+            # self.minmax_normalize()
 
 
 class YouTubeLg(Dataset):
@@ -705,7 +763,7 @@ class YouTubeLg(Dataset):
             # noinspection PyUnresolvedReferences
             self.y = df.pop('views')
             self.X = df
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class YouTubePlus(Dataset):
@@ -721,7 +779,7 @@ class YouTubePlus(Dataset):
             # noinspection PyUnresolvedReferences
             self.y = df.pop('views')
             self.X = df
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 class YouTubeLgMin(Dataset):
@@ -736,19 +794,18 @@ class YouTubeLgMin(Dataset):
             # noinspection PyUnresolvedReferences
             self.y = df.pop('views')
             self.X = df
-            self.minmax_normalize()
+            # self.minmax_normalize()
 
 
 datasets = {"abalone": Abalone,
             "autompg": AutoMPG,  # Missing values
             "bikesharing": BikeSharing,  # Does not converge
-            # "bikesharingfull": BikeSharingFull,
-            # "bikesharingnormalized": BikeSharingNormalized,
             "powerplant": CombinedCyclePowerPlant,
             # "challenger": Challenger, # Does not converge
             # "computerhardware": ComputerHardware, # What is the target?
             "concrete": ConcreteCompressingStrength,
             "energyefficiency1": EnergyEfficiency1,
+            "energyefficiency1normalized5": EnergyEfficiency1Normalized5,
             "energyefficiency2": EnergyEfficiency2,
             # "heartfailure": HeartFailure, # Classification
             # "iris": Iris, # Classification

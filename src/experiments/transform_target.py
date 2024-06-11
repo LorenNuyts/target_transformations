@@ -63,8 +63,11 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, featur
         # print(f"Fold {i}:")
         data.cross_validation(train_index, test_index, force=True)
         data.split_validation_set()
+        data.minmax_normalize_after_split()
         if data.missing_values:
             data.impute_missing_values()
+        if 'contextual_transform_feature' in data.other_params.keys():
+            data.transform_contextual()
         if target_transformer_name is not None:
             transformer = get_transformer(target_transformer_name)
             data.transform_target_custom(transformer)
@@ -80,18 +83,33 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, featur
             no_alpha_search(clf, data)
         predictions = clf.predict(data.Xtest)
         # error_bars.append(data.ytest - predictions)
+
+        # Target transformation with/without contextual transformation
         if target_transformer_name is not None:
             error = None
             try:
                 transformed_pred = data.other_params['target_transformer'].inverse_transform(
                     predictions.reshape(-1, 1)).ravel()
-                error = data.ytest - transformed_pred
-                score = root_mean_squared_error(data.ytest, transformed_pred)
+                if 'contextual_transform_feature' in data.other_params.keys():
+                    transformed_pred = data.inverse_contextual_transform(transformed_pred)
+                    transformed_y = data.inverse_contextual_transform(data.ytest)
+                else:
+                    transformed_y = data.ytest
+                error = transformed_y - transformed_pred
+                score = root_mean_squared_error(transformed_y, transformed_pred)
             except ValueError:
                 score = np.nan
                 if error is None:  # The transformation failed
                     error = np.nan
 
+        # No target transformation, but there is a contextual transformation
+        elif 'contextual_transform_feature' in data.other_params.keys():
+            transformed_pred = data.inverse_contextual_transform(predictions)
+            transformed_ytest = data.inverse_contextual_transform(data.ytest)
+            score = root_mean_squared_error(transformed_ytest, transformed_pred)
+            error = transformed_ytest - transformed_pred
+
+        # No target transformation, no contextual transformation
         else:
             score = root_mean_squared_error(data.ytest, predictions)
             error = data.ytest - predictions
