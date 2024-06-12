@@ -1,3 +1,4 @@
+import math
 import os
 import warnings
 from typing import Optional
@@ -17,6 +18,7 @@ from sklearn.experimental import enable_iterative_imputer  # Don't remove this o
 from ucimlrepo import fetch_ucirepo
 
 from .utils.constants import SEED
+from ..algorithms.transformers import LogTransformer
 
 # MODEL_DIR = os.environ["MODEL_DIR"]
 DATA_DIR = os.environ["DATA_DIR"]
@@ -211,12 +213,12 @@ class Dataset:
         # Xtrain = self.Xtrain.values
         min_max_scaler = preprocessing.MinMaxScaler()
         Xtrain_scaled = min_max_scaler.fit_transform(self.Xtrain.values)
-        self.Xtrain = pd.DataFrame(Xtrain_scaled, columns=self.Xtrain.columns)
+        self.Xtrain = pd.DataFrame(Xtrain_scaled, columns=self.Xtrain.columns, index=self.Xtrain.index)
         if self.Xval is not None:
             Xval_scaled = min_max_scaler.transform(self.Xval.values)
-            self.Xval = pd.DataFrame(Xval_scaled, columns=self.Xval.columns)
+            self.Xval = pd.DataFrame(Xval_scaled, columns=self.Xval.columns, index=self.Xval.index)
         Xtest_scaled = min_max_scaler.transform(self.Xtest.values)
-        self.Xtest = pd.DataFrame(Xtest_scaled, columns=self.Xtest.columns)
+        self.Xtest = pd.DataFrame(Xtest_scaled, columns=self.Xtest.columns, index=self.Xtest.index)
 
     def encode_object_types(self):
         cat_columns = self.X.select_dtypes(['object']).columns
@@ -263,6 +265,14 @@ class Dataset:
             columns = condition(self.Xtrain)
         else:
             columns = self.Xtrain.columns
+
+        if isinstance(transformer, LogTransformer):
+            min_train = self.Xtrain.values.min()
+            min_val = self.Xval.values.min()
+            min_test = self.Xtest.values.min()
+            min_all = min(min_train, min_val, min_test)
+            if min_all <= -transformer.offset:
+                transformer.offset = math.ceil(-min_all)
 
         self.Xtrain.loc[:, columns] = transformer.fit_transform(self.Xtrain.loc[:, columns].values)
         if self.Xval is not None:
@@ -805,7 +815,7 @@ datasets = {"abalone": Abalone,
             # "computerhardware": ComputerHardware, # What is the target?
             "concrete": ConcreteCompressingStrength,
             "energyefficiency1": EnergyEfficiency1,
-            "energyefficiency1normalized5": EnergyEfficiency1Normalized5,
+            # "energyefficiency1normalized5": EnergyEfficiency1Normalized5,
             "energyefficiency2": EnergyEfficiency2,
             # "heartfailure": HeartFailure, # Classification
             # "iris": Iris, # Classification
@@ -814,8 +824,8 @@ datasets = {"abalone": Abalone,
             # "parkinsons1": Parkinsons1, # Does not converge
             # "parkinsons2": Parkinsons2, # Does not converge
             "onlinenewspopularity": OnlineNewsPopularity,  # Does not converge
-            "onlinenewspopularityfull": OnlineNewsPopularityFull,
-            "onlinenewspopularitynormalized": OnlineNewsPopularityNormalized,
+            # "onlinenewspopularityfull": OnlineNewsPopularityFull,
+            # "onlinenewspopularitynormalized": OnlineNewsPopularityNormalized,
             "realestatevaluation": RealEstateValuation,
             "servo": Servo,
             "winequality": WineQuality,

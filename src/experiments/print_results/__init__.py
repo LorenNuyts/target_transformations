@@ -446,10 +446,14 @@ def print_all_results_excel(datasets: List[str], metric: str,  experiment_name, 
         # all_results = {}
         values = pd.DataFrame(index=datasets, columns=[])
         for dataset in datasets:
-            if from_text:
-                results = load_results_txt(experiment_name, dataset, suffix=suffix)
-            else:
-                results = load_results(experiment_name, dataset, suffix=suffix)
+            try:
+                if from_text:
+                    results = load_results_txt(experiment_name, dataset, suffix=suffix)
+                else:
+                    results = load_results(experiment_name, dataset, suffix=suffix)
+            except FileNotFoundError:
+                print(f"Results for {dataset} not found. Skipping.")
+                continue
             for method in results.keys():
                 if method == 'dataset' or (present_substring is not None and present_substring not in method) or (
                         absent_substring is not None and absent_substring in method):

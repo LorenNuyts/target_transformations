@@ -43,13 +43,10 @@ class LogTransformer(TransformerMixin):
             y = y.squeeze()
         if isinstance(y, pd.Series):
             y = y.values
-        # if 0 in y:
-        #     self.offset = 1
-        #     y += 1
         if self.base == 10:
-            return np.log10(y + 1)
+            return np.log10(y + self.offset)
         elif self.base == np.e:
-            return np.log(y + 1)
+            return np.log(y + self.offset)
         else:
             raise ValueError("Base must be 10 or e")
 
