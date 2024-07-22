@@ -815,7 +815,7 @@ datasets = {"abalone": Abalone,
             # "computerhardware": ComputerHardware, # What is the target?
             "concrete": ConcreteCompressingStrength,
             "energyefficiency1": EnergyEfficiency1,
-            # "energyefficiency1normalized5": EnergyEfficiency1Normalized5,
+            "energyefficiency1normalized5": EnergyEfficiency1Normalized5,
             "energyefficiency2": EnergyEfficiency2,
             # "heartfailure": HeartFailure, # Classification
             # "iris": Iris, # Classification
@@ -824,8 +824,8 @@ datasets = {"abalone": Abalone,
             # "parkinsons1": Parkinsons1, # Does not converge
             # "parkinsons2": Parkinsons2, # Does not converge
             "onlinenewspopularity": OnlineNewsPopularity,  # Does not converge
-            # "onlinenewspopularityfull": OnlineNewsPopularityFull,
-            # "onlinenewspopularitynormalized": OnlineNewsPopularityNormalized,
+            "onlinenewspopularityfull": OnlineNewsPopularityFull,
+            "onlinenewspopularitynormalized": OnlineNewsPopularityNormalized,
             "realestatevaluation": RealEstateValuation,
             "servo": Servo,
             "winequality": WineQuality,
