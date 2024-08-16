@@ -545,6 +545,49 @@ class EnergyEfficiency1(Dataset):
             # self.minmax_normalize()
 
 
+class EnergyEfficiency1Normalized2(Dataset):
+    """
+    Energy efficiency dataset from UCI repository, predicting heating load (Y1), normalized with the surface area
+    feature (X2).
+    """
+    def __init__(self):
+        super().__init__(Task.REGRESSION)
+
+    def load_dataset(self):
+        if self.X is None or self.y is None:
+            self.X, self.y = self._load_ucirepo("EnergyEfficiency", data_id=242)
+            self.y = self.y['Y1'].squeeze()
+            self.other_params['contextual_transform_feature'] = 'X2'
+
+
+class EnergyEfficiency1Normalized3(Dataset):
+    """
+    Energy efficiency dataset from UCI repository, predicting heating load (Y1), normalized with the wall area
+    feature (X3).
+    """
+    def __init__(self):
+        super().__init__(Task.REGRESSION)
+
+    def load_dataset(self):
+        if self.X is None or self.y is None:
+            self.X, self.y = self._load_ucirepo("EnergyEfficiency", data_id=242)
+            self.y = self.y['Y1'].squeeze()
+            self.other_params['contextual_transform_feature'] = 'X3'
+
+class EnergyEfficiency1Normalized4(Dataset):
+    """
+    Energy efficiency dataset from UCI repository, predicting heating load (Y1), normalized with the roof area
+    feature (X4).
+    """
+    def __init__(self):
+        super().__init__(Task.REGRESSION)
+
+    def load_dataset(self):
+        if self.X is None or self.y is None:
+            self.X, self.y = self._load_ucirepo("EnergyEfficiency", data_id=242)
+            self.y = self.y['Y1'].squeeze()
+            self.other_params['contextual_transform_feature'] = 'X4'
+
 class EnergyEfficiency1Normalized5(Dataset):
     """
     Energy efficiency dataset from UCI repository, predicting heating load (Y1), normalized with the overall height
@@ -558,9 +601,6 @@ class EnergyEfficiency1Normalized5(Dataset):
             self.X, self.y = self._load_ucirepo("EnergyEfficiency", data_id=242)
             self.y = self.y['Y1'].squeeze()
             self.other_params['contextual_transform_feature'] = 'X5'
-            # overall_height = self.X.pop('X5')
-            # self.y = self.y / overall_height
-            # self.minmax_normalize()
 
 
 class EnergyEfficiency2(Dataset):
