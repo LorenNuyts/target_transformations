@@ -25,6 +25,23 @@ class Keys:
     rse = "RSE"
     average_rse = "average RSE"
     std_rse = "std RSE"
+    transformed_rse = "Transformed RSE"
+    average_transformed_rse = "average Transformed RSE"
+    std_transformed_rse = "std Transformed RSE"
+
+    mape = "MAPE"
+    average_mape = "average MAPE"
+    std_mape = "std MAPE"
+    transformed_mape = "Transformed MAPE"
+    average_transformed_mape = "average Transformed MAPE"
+    std_transformed_mape = "std Transformed MAPE"
+
+    smape = "SMAPE"
+    average_smape = "average SMAPE"
+    std_smape = "std SMAPE"
+    transformed_smape = "Transformed SMAPE"
+    average_transformed_smape = "average Transformed SMAPE"
+    std_transformed_smape = "std Transformed SMAPE"
 
     clf = "clf"
     predictions = "predictions"

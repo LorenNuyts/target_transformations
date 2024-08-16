@@ -5,7 +5,7 @@ import warnings
 
 import numpy as np
 from scipy.optimize._optimize import BracketError
-from sklearn.metrics import root_mean_squared_error
+from sklearn.metrics import root_mean_squared_error, mean_absolute_percentage_error
 from sklearn.model_selection import RepeatedStratifiedKFold, RepeatedKFold
 
 from src.algorithms import skewed_columns
@@ -14,7 +14,7 @@ from src.experiments.utils import load_results, get_clf_full_name, save_results
 from src.experiments.utils.alpha_search import AlphaSearch
 from src.experiments.utils.classifiers import LassoTuned, RidgeRegressionTuned, GradientBoostingRegressorWrapper
 from src.experiments.utils.constants import SEED, get_transformer, Keys
-from src.experiments.utils.evaluation import relative_squared_error
+from src.experiments.utils.evaluation import relative_squared_error, symmetric_mean_absolute_percentage_error
 
 base = os.path.dirname(os.path.realpath(__file__))
 
@@ -44,9 +44,14 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, featur
         rskf = RepeatedKFold(n_splits=nb_splits, n_repeats=nb_repeats, random_state=SEED)
     else:
         rskf = RepeatedStratifiedKFold(n_splits=nb_splits, n_repeats=nb_repeats, random_state=SEED)
-    all_rmse = []
-    all_nrmse = []
+    all_transformed_rse = []
+    all_transformed_mape = []
+    all_transformed_smape = []
+    all_transformed_error = []
     all_rse = []
+    all_mape = []
+    all_smape = []
+    all_error = []
 
     # if nb_splits*nb_repeats - 1 in results[clf_name].keys():
     #     print("All folds already in results, skipping...")
@@ -84,73 +89,142 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, featur
         predictions = clf.predict(data.Xtest)
         # error_bars.append(data.ytest - predictions)
 
-        # Target transformation with/without contextual transformation
-        if target_transformer_name is not None:
-            error = None
-            try:
-                transformed_pred = data.other_params['target_transformer'].inverse_transform(
-                    predictions.reshape(-1, 1)).ravel()
-                if 'contextual_transform_feature' in data.other_params.keys():
-                    transformed_pred = data.inverse_contextual_transform(transformed_pred)
-                    transformed_y = data.inverse_contextual_transform(data.ytest)
-                else:
-                    transformed_y = data.ytest
-                error = transformed_y - transformed_pred
-                score = root_mean_squared_error(transformed_y, transformed_pred)
-            except ValueError:
-                score = np.nan
-                if error is None:  # The transformation failed
-                    error = np.nan
-
-        # No target transformation, but there is a contextual transformation
-        elif 'contextual_transform_feature' in data.other_params.keys():
-            transformed_pred = data.inverse_contextual_transform(predictions)
-            transformed_ytest = data.inverse_contextual_transform(data.ytest)
-            score = root_mean_squared_error(transformed_ytest, transformed_pred)
-            error = transformed_ytest - transformed_pred
-
-        # No target transformation, no contextual transformation
-        else:
-            score = root_mean_squared_error(data.ytest, predictions)
-            error = data.ytest - predictions
-        all_rmse.append(score)
-
-        if target_transformer_name is not None:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                if target_transformer_name == Keys.transformer_normalized:
-                    ytest = data.other_params['target_transformer'].inverse_transform(data.ytest.to_frame()).squeeze()
-                else:
-                    ytest = data.other_params['target_transformer'].transform(data.ytest.to_frame()).ravel()
-        else:
-            ytest = data.ytest
-        nrmse = root_mean_squared_error(ytest, predictions) / (ytest.max() - ytest.min())
-        rse = relative_squared_error(ytest, predictions)
-        all_nrmse.append(nrmse)
+        transformed_rse, transformed_mape, transformed_smape, transformed_error, rse, mape, smape, error = compute_metrics(data, predictions, target_transformer_name)
+        all_transformed_rse.append(transformed_rse)
+        all_transformed_mape.append(transformed_mape)
+        all_transformed_smape.append(transformed_smape)
+        all_transformed_error.append(transformed_error)
         all_rse.append(rse)
+        all_mape.append(mape)
+        all_smape.append(smape)
+        all_error.append(error)
 
         results[clf_name][i] = {Keys.clf: clf,
                                 Keys.predictions: predictions,
                                 Keys.error: error,
-                                Keys.rmse: score,
-                                Keys.nrmse: nrmse,
-                                Keys.rse: rse}
-    if len(all_rmse) == 10:
+                                Keys.rse: rse,
+                                Keys.mape: mape,
+                                Keys.smape: smape,
+                                Keys.transformed_rse: transformed_rse,
+                                Keys.transformed_mape: transformed_mape,
+                                Keys.transformed_smape: transformed_smape}
+    if len(all_rse) == 10:
         # print(f"Average RMSE {'normalized' if normalize_y else ''}:", np.mean(all_rmse))
-        results[clf_name].update({Keys.average_rmse: np.mean(all_rmse),
-                                  Keys.std_rmse: np.std(all_rmse)})
-        results[clf_name].update({Keys.average_nrmse: np.mean(all_nrmse),
-                                  Keys.std_nrmse: np.std(all_nrmse)})
+
         results[clf_name].update({Keys.average_rse: np.mean(all_rse),
                                   Keys.std_rse: np.std(all_rse)})
+        results[clf_name].update({Keys.average_mape: np.mean(all_mape),
+                                    Keys.std_mape: np.std(all_mape)})
+        results[clf_name].update({Keys.average_smape: np.mean(all_smape),
+                                    Keys.std_smape: np.std(all_smape)})
+        results[clf_name].update({Keys.average_transformed_rse: np.mean(all_transformed_rse),
+                                    Keys.std_transformed_rse: np.std(all_transformed_rse)})
+        results[clf_name].update({Keys.average_transformed_mape: np.mean(all_transformed_mape),
+                                    Keys.std_transformed_mape: np.std(all_transformed_mape)})
+        results[clf_name].update({Keys.average_transformed_smape: np.mean(all_transformed_smape),
+                                    Keys.std_transformed_smape: np.std(all_transformed_smape)})
+
         save_results(results, NAME, dataset_, suffix=suffix)
-    elif len(all_rse) == 10:
-        results[clf_name].update({Keys.average_rse: np.mean(all_rse),
-                                  Keys.std_rse: np.std(all_rse)})
-        save_results(results, NAME, dataset_, suffix=suffix)
-    if Keys.average_rse not in results[clf_name].keys():
-        print("Average RSE was not added to the results :(")
+    # elif len(all_rse) == 10:
+    #     results[clf_name].update({Keys.average_rse: np.mean(all_rse),
+    #                               Keys.std_rse: np.std(all_rse)})
+    #     save_results(results, NAME, dataset_, suffix=suffix)
+    # elif len(all_transformed_rse) == 10:
+    #     results[clf_name].update({Keys.average_transformed_rse: np.mean(all_transformed_rse),
+    #                               Keys.std_transformed_rse: np.std(all_transformed_rse)})
+    #     save_results(results, NAME, dataset_, suffix=suffix)
+    # if Keys.average_rse not in results[clf_name].keys():
+    #     print("Average RSE was not added to the results :(")
     # print_results(results)
+
+
+def compute_metrics(data, predictions, target_transformer_name):
+    # Compute RSE, MAPE, and SMAPE
+    transformed_rse = relative_squared_error(data.ytest, predictions)
+    transformed_mape = mean_absolute_percentage_error(data.ytest, predictions)
+    transformed_smape = symmetric_mean_absolute_percentage_error(data.ytest, predictions)
+    transformed_error = data.ytest - predictions
+
+    # Compute backtransformed RSE, MAPE, and SMAPE
+    back_transformed_pred = predictions
+    back_transformed_y = data.ytest
+    transformation_failed = False
+    if target_transformer_name is not None:
+        try:
+            back_transformed_pred = data.other_params['target_transformer'].inverse_transform(
+                back_transformed_pred.reshape(-1, 1)).ravel()
+            back_transformed_y = data.other_params['target_transformer'].inverse_transform(back_transformed_y.to_frame()).squeeze()
+        except ValueError:
+            transformation_failed = True
+    if 'contextual_transform_feature' in data.other_params.keys():
+        try:
+            back_transformed_pred = data.inverse_contextual_transform(back_transformed_pred)
+            back_transformed_y = data.inverse_contextual_transform(back_transformed_pred)
+        except ValueError:
+            transformation_failed = True
+    if transformation_failed:
+        back_transformed_rse = np.nan
+        back_transformed_mape = np.nan
+        back_transformed_smape = np.nan
+        back_transformed_error = np.nan
+    else:
+        back_transformed_rse = relative_squared_error(back_transformed_y, back_transformed_pred)
+        back_transformed_mape = mean_absolute_percentage_error(back_transformed_y, back_transformed_pred)
+        back_transformed_smape = symmetric_mean_absolute_percentage_error(back_transformed_y, back_transformed_pred)
+        back_transformed_error = back_transformed_y - back_transformed_pred
+
+    return (transformed_rse, transformed_mape, transformed_smape, transformed_error,
+            back_transformed_rse, back_transformed_mape, back_transformed_smape, back_transformed_error)
+
+
+
+
+    # # Target transformation with/without contextual transformation
+    # if target_transformer_name is not None:
+    #     error = None
+    #     try:
+    #         backtransformed_pred = data.other_params['target_transformer'].inverse_transform(
+    #             predictions.reshape(-1, 1)).ravel()
+    #         backtransformed_y = data.other_params['target_transformer'].inverse_transform(data.ytest.to_frame()).squeeze()
+    #         if 'contextual_transform_feature' in data.other_params.keys():
+    #             backtransformed_pred = data.inverse_contextual_transform(backtransformed_pred)
+    #             backtransformed_y = data.inverse_contextual_transform(backtransformed_pred)
+    #         else:
+    #             backtransformed_y = data.ytest
+    #         error = transformed_y - transformed_pred
+    #         score = root_mean_squared_error(transformed_y, transformed_pred)
+    #         transformed_rse = relative_squared_error(transformed_y, transformed_pred)
+    #     except ValueError:
+    #         score = np.nan
+    #         transformed_rse = np.nan
+    #         if error is None:  # The transformation failed
+    #             error = np.nan
+    #
+    # # No target transformation, but there is a contextual transformation
+    # elif 'contextual_transform_feature' in data.other_params.keys():
+    #     transformed_pred = data.inverse_contextual_transform(predictions)
+    #     transformed_ytest = data.inverse_contextual_transform(data.ytest)
+    #     score = root_mean_squared_error(transformed_ytest, transformed_pred)
+    #     transformed_rse = relative_squared_error(transformed_ytest, transformed_pred)
+    #     error = transformed_ytest - transformed_pred
+    #
+    # # No target transformation, no contextual transformation
+    # else:
+    #     score = root_mean_squared_error(data.ytest, predictions)
+    #     transformed_rse = relative_squared_error(data.ytest, predictions)
+    #     error = data.ytest - predictions
+    # if target_transformer_name is not None:
+    #     with warnings.catch_warnings():
+    #         warnings.simplefilter("ignore")
+    #         if target_transformer_name == Keys.transformer_normalized:
+    #             ytest = data.other_params['target_transformer'].inverse_transform(data.ytest.to_frame()).squeeze()
+    #         else:
+    #             ytest = data.other_params['target_transformer'].transform(data.ytest.to_frame()).ravel()
+    # else:
+    #     ytest = data.ytest
+    # nrmse = root_mean_squared_error(ytest, predictions) / (ytest.max() - ytest.min())
+    # rse = relative_squared_error(ytest, predictions)
+    # return error, nrmse, rse, score, transformed_rse
 
 
 def do_alpha_search(clf, data):

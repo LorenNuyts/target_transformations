@@ -252,7 +252,7 @@ class Dataset:
         self.ytrain = transformer.fit_transform(self.ytrain.values.reshape(-1, 1)).ravel()
         if self.yval is not None:
             self.yval = transformer.transform(self.yval.values.reshape(-1, 1)).ravel()
-        # self.ytest = transformer.transform(self.ytest.values.reshape(-1, 1)).ravel()
+        self.ytest = transformer.transform(self.ytest.values.reshape(-1, 1)).ravel()
         self.other_params["target_transformer"] = transformer
 
     def transform_features_custom(self, transformer, condition=None):
