@@ -855,6 +855,9 @@ datasets = {"abalone": Abalone,
             # "computerhardware": ComputerHardware, # What is the target?
             "concrete": ConcreteCompressingStrength,
             "energyefficiency1": EnergyEfficiency1,
+            "energyefficiency1normalized2": EnergyEfficiency1Normalized2,
+            "energyefficiency1normalized3": EnergyEfficiency1Normalized3,
+            "energyefficiency1normalized4": EnergyEfficiency1Normalized4,
             "energyefficiency1normalized5": EnergyEfficiency1Normalized5,
             "energyefficiency2": EnergyEfficiency2,
             # "heartfailure": HeartFailure, # Classification
