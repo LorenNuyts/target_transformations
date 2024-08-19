@@ -36,7 +36,9 @@ if __name__ == '__main__':
     if 'all' in datasets_:
         datasets_ = list(datasets.keys())
 
-    all_metrics = {'rmse': Keys.average_rmse, 'nrmse': Keys.average_nrmse, 'rse': Keys.average_rse}
+    all_metrics = {'rse': Keys.average_rse, 'transformed_rse': Keys.average_transformed_rse, 'mape': Keys.average_mape,
+                   'transformed_mape': Keys.average_transformed_mape, 'smape': Keys.average_smape,
+                   'transformed_smape': Keys.average_transformed_smape,}
     feature_transformer_name = None
 
     for metric_ in all_metrics.keys():
