@@ -153,7 +153,7 @@ def compute_metrics(data, predictions, target_transformer_name):
         try:
             back_transformed_pred = data.other_params['target_transformer'].inverse_transform(
                 back_transformed_pred.reshape(-1, 1)).ravel()
-            back_transformed_y = data.other_params['target_transformer'].inverse_transform(back_transformed_y)
+            back_transformed_y = data.other_params['target_transformer'].inverse_transform(back_transformed_y.reshape(-1, 1)).ravel()
         except ValueError:
             transformation_failed = True
     if 'contextual_transform_feature' in data.other_params.keys():
