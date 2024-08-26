@@ -472,6 +472,8 @@ def print_all_results_excel(datasets: List[str], metric: str,  experiment_name, 
         # Transform values to excel format such that I can copy paste them in excel
 
         if column_order is not None:
+            missing_columns = set(column_order) - set(values.columns)
+            values[list(missing_columns)] = np.nan
             values = values[column_order]
         print(values.to_csv(sep='\t'))
 
