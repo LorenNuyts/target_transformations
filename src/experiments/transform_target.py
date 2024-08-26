@@ -111,18 +111,18 @@ def run(data: Dataset, clf=DEFAULT_CLFS[1], target_transformer_name=None, featur
     if len(all_rse) == 10:
         # print(f"Average RMSE {'normalized' if normalize_y else ''}:", np.mean(all_rmse))
 
-        results[clf_name].update({Keys.average_rse: np.mean(all_rse),
-                                  Keys.std_rse: np.std(all_rse)})
-        results[clf_name].update({Keys.average_mape: np.mean(all_mape),
-                                    Keys.std_mape: np.std(all_mape)})
-        results[clf_name].update({Keys.average_smape: np.mean(all_smape),
-                                    Keys.std_smape: np.std(all_smape)})
-        results[clf_name].update({Keys.average_transformed_rse: np.mean(all_transformed_rse),
-                                    Keys.std_transformed_rse: np.std(all_transformed_rse)})
-        results[clf_name].update({Keys.average_transformed_mape: np.mean(all_transformed_mape),
-                                    Keys.std_transformed_mape: np.std(all_transformed_mape)})
-        results[clf_name].update({Keys.average_transformed_smape: np.mean(all_transformed_smape),
-                                    Keys.std_transformed_smape: np.std(all_transformed_smape)})
+        results[clf_name].update({Keys.average_rse: np.nanmean(all_rse),
+                                  Keys.std_rse: np.nanstd(all_rse)})
+        results[clf_name].update({Keys.average_mape: np.nanmean(all_mape),
+                                    Keys.std_mape: np.nanstd(all_mape)})
+        results[clf_name].update({Keys.average_smape: np.nanmean(all_smape),
+                                    Keys.std_smape: np.nanstd(all_smape)})
+        results[clf_name].update({Keys.average_transformed_rse: np.nanmean(all_transformed_rse),
+                                    Keys.std_transformed_rse: np.nanstd(all_transformed_rse)})
+        results[clf_name].update({Keys.average_transformed_mape: np.nanmean(all_transformed_mape),
+                                    Keys.std_transformed_mape: np.nanstd(all_transformed_mape)})
+        results[clf_name].update({Keys.average_transformed_smape: np.nanmean(all_transformed_smape),
+                                    Keys.std_transformed_smape: np.nanstd(all_transformed_smape)})
 
         save_results(results, NAME, dataset_, suffix=suffix)
     # elif len(all_rse) == 10:
@@ -169,9 +169,16 @@ def compute_metrics(data, predictions, target_transformer_name):
         back_transformed_error = np.nan
     else:
         back_transformed_rse = relative_squared_error(back_transformed_y, back_transformed_pred)
-        back_transformed_mape = mean_absolute_percentage_error(back_transformed_y, back_transformed_pred)
         back_transformed_smape = symmetric_mean_absolute_percentage_error(back_transformed_y, back_transformed_pred)
         back_transformed_error = back_transformed_y - back_transformed_pred
+        pred_nan = back_transformed_pred.isna()
+        y_nan = back_transformed_y.isna()
+        if (pred_nan.any() or y_nan.any()) and pred_nan.equals(y_nan) and len(back_transformed_pred[pred_nan]) < 0.1 * len(back_transformed_pred):
+            back_transformed_pred_cleaned = back_transformed_pred.dropna()
+            back_transformed_y_cleaned = back_transformed_y.dropna()
+            back_transformed_mape = mean_absolute_percentage_error(back_transformed_y_cleaned, back_transformed_pred_cleaned)
+        else:
+            back_transformed_mape = mean_absolute_percentage_error(back_transformed_y, back_transformed_pred)
 
     return (transformed_rse, transformed_mape, transformed_smape, transformed_error,
             back_transformed_rse, back_transformed_mape, back_transformed_smape, back_transformed_error)
