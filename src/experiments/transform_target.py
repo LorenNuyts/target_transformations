@@ -171,9 +171,9 @@ def compute_metrics(data, predictions, target_transformer_name):
         back_transformed_rse = relative_squared_error(back_transformed_y, back_transformed_pred)
         back_transformed_smape = symmetric_mean_absolute_percentage_error(back_transformed_y, back_transformed_pred)
         back_transformed_error = back_transformed_y - back_transformed_pred
-        pred_nan = np.isnan(back_transformed_pred)
-        y_nan = np.isnan(back_transformed_y)
-        if (pred_nan.any() or y_nan.any()) and pred_nan.equals(y_nan) and len(back_transformed_pred[pred_nan]) < 0.1 * len(back_transformed_pred):
+        pred_nan: np.ndarray = np.isnan(back_transformed_pred)
+        y_nan: np.ndarray = np.isnan(back_transformed_y)
+        if (pred_nan.any() or y_nan.any()) and np.equal(pred_nan, y_nan) and len(back_transformed_pred[pred_nan]) < 0.1 * len(back_transformed_pred):
             back_transformed_pred_cleaned = back_transformed_pred.dropna()
             back_transformed_y_cleaned = back_transformed_y.dropna()
             back_transformed_mape = mean_absolute_percentage_error(back_transformed_y_cleaned, back_transformed_pred_cleaned)
