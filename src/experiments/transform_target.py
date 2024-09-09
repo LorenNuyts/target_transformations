@@ -173,7 +173,7 @@ def compute_metrics(data, predictions, target_transformer_name):
         back_transformed_error = back_transformed_y - back_transformed_pred
         pred_nan: np.ndarray = np.isnan(back_transformed_pred)
         y_nan: np.ndarray = np.isnan(back_transformed_y)
-        if (pred_nan.any() or y_nan.any()) and np.equal(pred_nan, y_nan) and len(back_transformed_pred[pred_nan]) < 0.1 * len(back_transformed_pred):
+        if (pred_nan.any() or y_nan.any()) and np.equal(pred_nan, y_nan).all() and len(back_transformed_pred[pred_nan]) < 0.1 * len(back_transformed_pred):
             back_transformed_pred_cleaned = back_transformed_pred.dropna()
             back_transformed_y_cleaned = back_transformed_y.dropna()
             back_transformed_mape = mean_absolute_percentage_error(back_transformed_y_cleaned, back_transformed_pred_cleaned)
@@ -262,7 +262,7 @@ def run_all_target_transformers(dataset: Dataset, clf, feature_transformer, suff
     try:
         run(dataset, clf=clf, target_transformer_name=Keys.transformer_powertransformer,
             feature_transformer_name=feature_transformer, suffix=suffix)
-    except (ValueError, BracketError):
+    except (ValueError, BracketError) as e:
         print(f"PowerTransformer failed for {dataset.name()}")
 
     run(dataset, clf=clf, target_transformer_name=Keys.transformer_logtransformer,
