@@ -173,9 +173,10 @@ def compute_metrics(data, predictions, target_transformer_name):
         back_transformed_error = back_transformed_y - back_transformed_pred
         pred_nan: np.ndarray = np.isnan(back_transformed_pred)
         y_nan: np.ndarray = np.isnan(back_transformed_y)
-        if (pred_nan.any() or y_nan.any()) and np.equal(pred_nan, y_nan).all() and len(back_transformed_pred[pred_nan]) < 0.1 * len(back_transformed_pred):
-            back_transformed_pred_cleaned = back_transformed_pred.dropna()
-            back_transformed_y_cleaned = back_transformed_y.dropna()
+        union_nan = np.union1d(np.where(pred_nan == True), np.where(y_nan == True))
+        if len(union_nan) > 0 and len(back_transformed_pred[union_nan]) < 0.1 * len(back_transformed_pred):
+            back_transformed_pred_cleaned = np.delete(back_transformed_pred, union_nan)
+            back_transformed_y_cleaned = np.delete(back_transformed_y, union_nan)
             back_transformed_mape = mean_absolute_percentage_error(back_transformed_y_cleaned, back_transformed_pred_cleaned)
         else:
             back_transformed_mape = mean_absolute_percentage_error(back_transformed_y, back_transformed_pred)
@@ -250,25 +251,25 @@ def no_alpha_search(clf, data):
 
 
 def run_all_target_transformers(dataset: Dataset, clf, feature_transformer, suffix):
-    run(dataset, clf=clf, feature_transformer_name=feature_transformer, suffix=suffix)
-    run(dataset, clf=clf, target_transformer_name=Keys.transformer_normalized,
-        feature_transformer_name=feature_transformer, suffix=suffix)
-    run(dataset, clf=clf, target_transformer_name=Keys.transformer_quantile_uniform,
-        feature_transformer_name=feature_transformer, suffix=suffix)
-    run(dataset, clf=clf, target_transformer_name=Keys.transformer_quantile_normal,
-        feature_transformer_name=feature_transformer, suffix=suffix)
-    run(dataset, clf=clf, target_transformer_name=Keys.transformer_robustscaler,
-        feature_transformer_name=feature_transformer, suffix=suffix)
+    # run(dataset, clf=clf, feature_transformer_name=feature_transformer, suffix=suffix)
+    # run(dataset, clf=clf, target_transformer_name=Keys.transformer_normalized,
+    #     feature_transformer_name=feature_transformer, suffix=suffix)
+    # run(dataset, clf=clf, target_transformer_name=Keys.transformer_quantile_uniform,
+    #     feature_transformer_name=feature_transformer, suffix=suffix)
+    # run(dataset, clf=clf, target_transformer_name=Keys.transformer_quantile_normal,
+    #     feature_transformer_name=feature_transformer, suffix=suffix)
+    # run(dataset, clf=clf, target_transformer_name=Keys.transformer_robustscaler,
+    #     feature_transformer_name=feature_transformer, suffix=suffix)
     try:
         run(dataset, clf=clf, target_transformer_name=Keys.transformer_powertransformer,
             feature_transformer_name=feature_transformer, suffix=suffix)
     except (ValueError, BracketError) as e:
         print(f"PowerTransformer failed for {dataset.name()}")
 
-    run(dataset, clf=clf, target_transformer_name=Keys.transformer_logtransformer,
-        feature_transformer_name=feature_transformer, suffix=suffix)
-    run(dataset, clf=clf, target_transformer_name=Keys.transformer_lntransformer,
-        feature_transformer_name=feature_transformer, suffix=suffix)
+    # run(dataset, clf=clf, target_transformer_name=Keys.transformer_logtransformer,
+    #     feature_transformer_name=feature_transformer, suffix=suffix)
+    # run(dataset, clf=clf, target_transformer_name=Keys.transformer_lntransformer,
+    #     feature_transformer_name=feature_transformer, suffix=suffix)
 
 
 if __name__ == '__main__':
