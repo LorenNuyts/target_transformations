@@ -251,25 +251,25 @@ def no_alpha_search(clf, data):
 
 
 def run_all_target_transformers(dataset: Dataset, clf, feature_transformer, suffix):
-    # run(dataset, clf=clf, feature_transformer_name=feature_transformer, suffix=suffix)
-    # run(dataset, clf=clf, target_transformer_name=Keys.transformer_normalized,
-    #     feature_transformer_name=feature_transformer, suffix=suffix)
-    # run(dataset, clf=clf, target_transformer_name=Keys.transformer_quantile_uniform,
-    #     feature_transformer_name=feature_transformer, suffix=suffix)
-    # run(dataset, clf=clf, target_transformer_name=Keys.transformer_quantile_normal,
-    #     feature_transformer_name=feature_transformer, suffix=suffix)
-    # run(dataset, clf=clf, target_transformer_name=Keys.transformer_robustscaler,
-    #     feature_transformer_name=feature_transformer, suffix=suffix)
+    run(dataset, clf=clf, feature_transformer_name=feature_transformer, suffix=suffix)
+    run(dataset, clf=clf, target_transformer_name=Keys.transformer_normalized,
+        feature_transformer_name=feature_transformer, suffix=suffix)
+    run(dataset, clf=clf, target_transformer_name=Keys.transformer_quantile_uniform,
+        feature_transformer_name=feature_transformer, suffix=suffix)
+    run(dataset, clf=clf, target_transformer_name=Keys.transformer_quantile_normal,
+        feature_transformer_name=feature_transformer, suffix=suffix)
+    run(dataset, clf=clf, target_transformer_name=Keys.transformer_robustscaler,
+        feature_transformer_name=feature_transformer, suffix=suffix)
     try:
         run(dataset, clf=clf, target_transformer_name=Keys.transformer_powertransformer,
             feature_transformer_name=feature_transformer, suffix=suffix)
     except (ValueError, BracketError) as e:
         print(f"PowerTransformer failed for {dataset.name()}")
 
-    # run(dataset, clf=clf, target_transformer_name=Keys.transformer_logtransformer,
-    #     feature_transformer_name=feature_transformer, suffix=suffix)
-    # run(dataset, clf=clf, target_transformer_name=Keys.transformer_lntransformer,
-    #     feature_transformer_name=feature_transformer, suffix=suffix)
+    run(dataset, clf=clf, target_transformer_name=Keys.transformer_logtransformer,
+        feature_transformer_name=feature_transformer, suffix=suffix)
+    run(dataset, clf=clf, target_transformer_name=Keys.transformer_lntransformer,
+        feature_transformer_name=feature_transformer, suffix=suffix)
 
 
 if __name__ == '__main__':
