@@ -1,7 +1,6 @@
 import numpy as np
+import pandas as pd
 from sklearn.metrics import mean_absolute_percentage_error
-
-from src.experiments.data import Task
 
 
 def relative_squared_error(y_true, y_pred):
@@ -13,8 +12,9 @@ def symmetric_mean_absolute_percentage_error(y_true, y_pred):
 
 def compute_metrics(data, predictions, target_transformer_name):
     # Compute RSE, MAPE, and SMAPE
-    predictions = predictions.reset_index(drop=True)
-    ytest = data.ytest.reset_index(drop=True)
+    predictions = predictions.values
+    ytest = data.ytest.values if isinstance(data.ytest, pd.Series) else data.ytest
+    # ytest = data.ytest.reset_index(drop=True)
     transformed_rse = relative_squared_error(ytest, predictions)
     transformed_mape = mean_absolute_percentage_error(ytest, predictions)
     transformed_smape = symmetric_mean_absolute_percentage_error(ytest, predictions)

@@ -245,15 +245,21 @@ class Dataset:
         self.y = pd.Series(le.fit_transform(self.y.values.ravel()), index=self.y.index)
 
     def transform_target_custom(self, transformer):
-        if self.y is None:
+        if (self.y is None and self.task != Task.FORECASTING) or (self.X is None and self.task == Task.FORECASTING):
             raise RuntimeError("data not loaded")
         if self.ytrain is None or self.ytest is None:
             raise RuntimeError("train and test sets not loaded")
 
         self.ytrain = transformer.fit_transform(self.ytrain.values.reshape(-1, 1)).ravel()
+        if self.task == Task.FORECASTING:
+            self.Xtrain = pd.Series(self.ytrain).to_frame(name=self.Xtrain.columns[0])
         if self.yval is not None:
             self.yval = transformer.transform(self.yval.values.reshape(-1, 1)).ravel()
+            if self.task == Task.FORECASTING:
+                self.Xval = pd.Series(self.yval).to_frame(name=self.Xval.columns[0])
         self.ytest = transformer.transform(self.ytest.values.reshape(-1, 1)).ravel()
+        if self.task == Task.FORECASTING:
+            self.Xtest = pd.Series(self.ytest).to_frame(name=self.Xtest.columns[0])
         self.other_params["target_transformer"] = transformer
 
     def transform_features_custom(self, transformer, condition=None):
@@ -293,7 +299,7 @@ class Dataset:
             raise ValueError("No feature for contextual transformation provided")
         feature_name = self.other_params['contextual_transform_feature']
         train_values = self.X.iloc[self.Itrain][feature_name]
-        self.Xtrain.drop(feature_name, axis=1, inplace=True)
+        self.Xtrain = self.Xtrain.drop(feature_name, axis=1)
         if self.task == Task.FORECASTING:
             self.Xtrain = self.Xtrain.div(train_values, axis=0)
             self.ytrain = self.Xtrain.squeeze()
@@ -301,14 +307,14 @@ class Dataset:
             self.ytrain = self.ytrain / train_values
         if self.Xval is not None:
             val_values = self.X.iloc[self.Ival][feature_name]
-            self.Xval.drop(feature_name, axis=1, inplace=True)
+            self.Xval = self.Xval.drop(feature_name, axis=1)
             if self.task == Task.FORECASTING:
                 self.Xval = self.Xval.div(val_values, axis=0)
                 self.yval = self.Xval.squeeze()
             else:
                 self.yval = self.yval / val_values
         test_values = self.X.iloc[self.Itest][feature_name]
-        self.Xtest.drop(feature_name, axis=1, inplace=True)
+        self.Xtest = self.Xtest.drop(feature_name, axis=1)
         if self.task == Task.FORECASTING:
             self.Xtest = self.Xtest.div(test_values, axis=0)
             self.ytest = self.Xtest.squeeze()
@@ -935,9 +941,11 @@ class CoffeeSalesMonthlyNormalized(Dataset):
             self.y = None
             # noinspection PyUnresolvedReferences
             self.X = df[['Total']]
-            # noinspection PyUnresolvedReferences
-            self.X['Nb_days'] = df.index.days_in_month
-            self.X.reset_index(drop=True, inplace=True)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                # noinspection PyUnresolvedReferences
+                self.X['Nb_days'] = df.index.days_in_month
+                self.X.reset_index(drop=True, inplace=True)
             self.other_params['contextual_transform_feature'] = 'Nb_days'
 
 

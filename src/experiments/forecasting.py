@@ -23,7 +23,7 @@ def run(data: Dataset, target_transformer_name=None, suffix=""):
         results[clf_full_name] = {}
 
     nb_splits = 2 if "month" in data.name else 10
-    if nb_splits - 1 in results[clf_name].keys():
+    if nb_splits - 1 in results[clf_full_name].keys():
         print("All folds already in results, skipping...")
         return
 
