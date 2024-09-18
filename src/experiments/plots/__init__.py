@@ -135,7 +135,7 @@ def plot_error_bars(y, dataset_name: str, included_transformers: list, clf=DEFAU
     labels = []
 
     for tr_i, tr in enumerate(included_transformers):
-        clf_name = get_clf_full_name(clf, tr)
+        clf_name = get_clf_full_name(clf.name, tr)
         errors = []
         for fold in results[clf_name].keys():
             if isinstance(fold, int):

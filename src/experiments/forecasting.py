@@ -1,0 +1,131 @@
+import argparse
+
+import numpy as np
+from scipy.optimize._optimize import BracketError
+from sklearn.model_selection import TimeSeriesSplit
+
+from src.experiments.data import Dataset, datasets
+from src.experiments.utils import load_results, get_clf_full_name, save_results
+from statsmodels.tsa.api import ExponentialSmoothing
+
+from src.experiments.utils.constants import get_transformer, Keys
+from src.experiments.utils.evaluation import compute_metrics
+
+clf_name = "ExponentialSmoothing"
+
+NAME = "forecasting"
+
+
+def run(data: Dataset, target_transformer_name=None, suffix=""):
+    results = load_results(NAME, data.name, suffix=suffix, reset=False)
+    clf_full_name = get_clf_full_name(clf_name, target_transformer_name)
+    if clf_full_name not in results:
+        results[clf_full_name] = {}
+
+    nb_splits = 2 if "month" in data.name else 10
+    if nb_splits - 1 in results[clf_name].keys():
+        print("All folds already in results, skipping...")
+        return
+
+    tscv = TimeSeriesSplit(n_splits=nb_splits)
+    data.load_dataset()
+
+    all_transformed_rse = []
+    all_transformed_mape = []
+    all_transformed_smape = []
+    all_transformed_error = []
+    all_rse = []
+    all_mape = []
+    all_smape = []
+    all_error = []
+    for i, (train_index, test_index) in enumerate(tscv.split(data.X)):
+        if i in results[clf_full_name].keys():
+            print(f"Fold {i} already in results, skipping...")
+            continue
+        else:
+            results[clf_full_name][i] = {}
+        print(f"Fold {i}:")
+        data.cross_validation(train_index, test_index, force=True)
+
+        if data.missing_values:
+            data.impute_missing_values()
+        if 'contextual_transform_feature' in data.other_params.keys():
+            data.transform_contextual()
+        if target_transformer_name is not None:
+            transformer = get_transformer(target_transformer_name)
+            data.transform_target_custom(transformer)
+
+        clf = ExponentialSmoothing(data.Xtrain)
+        clf = clf.fit()
+        predictions = clf.forecast(len(data.Xtest))
+#
+        transformed_rse, transformed_mape, transformed_smape, transformed_error, rse, mape, smape, error = compute_metrics(data, predictions, target_transformer_name)
+        all_transformed_rse.append(transformed_rse)
+        all_transformed_mape.append(transformed_mape)
+        all_transformed_smape.append(transformed_smape)
+        all_transformed_error.append(transformed_error)
+        all_rse.append(rse)
+        all_mape.append(mape)
+        all_smape.append(smape)
+        all_error.append(error)
+
+        results[clf_full_name][i] = {Keys.clf: clf,
+                                Keys.predictions: predictions,
+                                Keys.error: error,
+                                Keys.rse: rse,
+                                Keys.mape: mape,
+                                Keys.smape: smape,
+                                Keys.transformed_rse: transformed_rse,
+                                Keys.transformed_mape: transformed_mape,
+                                Keys.transformed_smape: transformed_smape}
+    if len(all_rse) == nb_splits:
+        results[clf_full_name].update({Keys.average_rse: np.nanmean(all_rse),
+                                  Keys.std_rse: np.nanstd(all_rse)})
+        results[clf_full_name].update({Keys.average_mape: np.nanmean(all_mape),
+                                    Keys.std_mape: np.nanstd(all_mape)})
+        results[clf_full_name].update({Keys.average_smape: np.nanmean(all_smape),
+                                    Keys.std_smape: np.nanstd(all_smape)})
+        results[clf_full_name].update({Keys.average_transformed_rse: np.nanmean(all_transformed_rse),
+                                    Keys.std_transformed_rse: np.nanstd(all_transformed_rse)})
+        results[clf_full_name].update({Keys.average_transformed_mape: np.nanmean(all_transformed_mape),
+                                    Keys.std_transformed_mape: np.nanstd(all_transformed_mape)})
+        results[clf_full_name].update({Keys.average_transformed_smape: np.nanmean(all_transformed_smape),
+                                    Keys.std_transformed_smape: np.nanstd(all_transformed_smape)})
+
+        save_results(results, NAME, dataset_, suffix=suffix)
+
+
+def run_all_target_transformers(dataset: Dataset, suffix):
+    run(dataset, suffix=suffix)
+    run(dataset, target_transformer_name=Keys.transformer_normalized, suffix=suffix)
+    run(dataset, target_transformer_name=Keys.transformer_quantile_uniform, suffix=suffix)
+    run(dataset, target_transformer_name=Keys.transformer_quantile_normal, suffix=suffix)
+    run(dataset, target_transformer_name=Keys.transformer_robustscaler, suffix=suffix)
+    try:
+        run(dataset,  target_transformer_name=Keys.transformer_powertransformer, suffix=suffix)
+    except (ValueError, BracketError) as e:
+        print(f"PowerTransformer failed for {dataset.name()}")
+
+    run(dataset, target_transformer_name=Keys.transformer_logtransformer, suffix=suffix)
+    run(dataset, target_transformer_name=Keys.transformer_lntransformer, suffix=suffix)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('dataset', type=str)
+    # parser.add_argument('--plot_error', action='store_true')
+    # parser.add_argument("--auc", type=float, nargs="?", default=default_auc_percentage)
+    parser.add_argument("--suffix", type=str, nargs="?", default="")
+    args = parser.parse_args()
+    dataset_ = args.dataset
+    suffix_ = args.suffix
+
+    all_datasets = list(datasets.keys())
+    # run(datasets[dataset_](), suffix=suffix_)
+
+    if dataset_ == 'all':
+        for dataset_ in all_datasets:
+            print(f"Running {dataset_}...")
+            run_all_target_transformers(datasets[dataset_](), suffix_)
+    else:
+        run_all_target_transformers(datasets[dataset_.lower()](), suffix_)

@@ -47,7 +47,7 @@ if __name__ == '__main__':
                                 # present_substring=f"__f_{feature_transformer_name}".replace(' ', ''),
                                 # absent_substring='__f_',
                                 suffix=suffix_, from_text=not from_pkl_,
-                                column_order=[get_clf_full_name(clf, transformer,
+                                column_order=[get_clf_full_name(clf.name, transformer,
                                                                 feature_transformer_name).replace(' ', '')
                                               for clf in DEFAULT_CLFS for transformer in [None] + Keys.all_transformers])
         print("###########################################################################")
