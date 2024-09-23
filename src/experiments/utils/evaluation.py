@@ -12,7 +12,7 @@ def symmetric_mean_absolute_percentage_error(y_true, y_pred):
 
 def compute_metrics(data, predictions, target_transformer_name):
     # Compute RSE, MAPE, and SMAPE
-    predictions = predictions.values
+    predictions = predictions.values if isinstance(predictions, pd.Series) else predictions
     ytest = data.ytest.values if isinstance(data.ytest, pd.Series) else data.ytest
     # ytest = data.ytest.reset_index(drop=True)
     transformed_rse = relative_squared_error(ytest, predictions)
