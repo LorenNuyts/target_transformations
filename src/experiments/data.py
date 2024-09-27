@@ -989,7 +989,7 @@ class CoffeeSalesMonthlyNormalized(Dataset):
                 warnings.simplefilter("ignore")
                 # noinspection PyUnresolvedReferences
                 self.X['Nb_days'] = df.index.days_in_month
-                self.X.reset_index(drop=True, inplace=True)
+                # self.X.reset_index(drop=True, inplace=True)
             self.other_params['contextual_transform_feature'] = 'Nb_days'
 
 class SolarEnergyProductionDaily(Dataset):
