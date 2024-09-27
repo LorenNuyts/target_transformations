@@ -1,3 +1,4 @@
+import abc
 import math
 import os
 import warnings
@@ -14,6 +15,7 @@ import sklearn.metrics as metrics
 from sklearn import preprocessing
 from sklearn.datasets import fetch_openml
 from sklearn.experimental import enable_iterative_imputer  # Don't remove this one, it is used!
+from sklearn.model_selection import RepeatedKFold, RepeatedStratifiedKFold, TimeSeriesSplit
 
 from ucimlrepo import fetch_ucirepo
 
@@ -59,48 +61,51 @@ class Dataset:
     def name(self) -> str:
         return type(self).__name__ + self.name_suffix
 
-    def xgb_params(self, task, custom_params=None):
-        if custom_params is None:
-            custom_params = {}
-        if task == Task.REGRESSION:
-            params = {  # defaults
-                "objective": "reg:squarederror",
-                "eval_metric": "rmse",
-                "tree_method": "hist",
-                "seed": SEED,
-                "nthread": self.nthreads,
-            }
-        elif task == Task.CLASSIFICATION:
-            params = {  # defaults
-                "objective": "binary:logistic",
-                "eval_metric": "error",
-                "tree_method": "hist",
-                "seed": SEED,
-                "nthread": self.nthreads,
-            }
-        elif task == Task.MULTI_CLASSIFICATION:
-            params = {
-                "num_class": 0,
-                "objective": "multi:softmax",
-                "tree_method": "hist",
-                "eval_metric": "merror",
-                "seed": SEED,
-                "nthread": self.nthreads,
-            }
-        else:
-            raise RuntimeError("unknown task")
-        params.update(custom_params)
-        return params
+    def model_params(self):
+        return {}
 
-    def rf_params(self, custom_params):
-        params = custom_params.copy()
-        params["n_jobs"] = self.nthreads
-        return params
-
-    def extra_trees_params(self, custom_params):
-        params = custom_params.copy()
-        params["n_jobs"] = self.nthreads
-        return params
+    # def xgb_params(self, task, custom_params=None):
+    #     if custom_params is None:
+    #         custom_params = {}
+    #     if task == Task.REGRESSION:
+    #         params = {  # defaults
+    #             "objective": "reg:squarederror",
+    #             "eval_metric": "rmse",
+    #             "tree_method": "hist",
+    #             "seed": SEED,
+    #             "nthread": self.nthreads,
+    #         }
+    #     elif task == Task.CLASSIFICATION:
+    #         params = {  # defaults
+    #             "objective": "binary:logistic",
+    #             "eval_metric": "error",
+    #             "tree_method": "hist",
+    #             "seed": SEED,
+    #             "nthread": self.nthreads,
+    #         }
+    #     elif task == Task.MULTI_CLASSIFICATION:
+    #         params = {
+    #             "num_class": 0,
+    #             "objective": "multi:softmax",
+    #             "tree_method": "hist",
+    #             "eval_metric": "merror",
+    #             "seed": SEED,
+    #             "nthread": self.nthreads,
+    #         }
+    #     else:
+    #         raise RuntimeError("unknown task")
+    #     params.update(custom_params)
+    #     return params
+    #
+    # def rf_params(self, custom_params):
+    #     params = custom_params.copy()
+    #     params["n_jobs"] = self.nthreads
+    #     return params
+    #
+    # def extra_trees_params(self, custom_params):
+    #     params = custom_params.copy()
+    #     params["n_jobs"] = self.nthreads
+    #     return params
 
     def load_dataset(self):  # populate X, y
         raise RuntimeError("not implemented")
@@ -132,6 +137,46 @@ class Dataset:
         if self.Xtest is None or self.ytest is None or force:
             self.Xtest = self.X.iloc[self.Itest]
             self.ytest = self.y[self.Itest]
+
+    def generate_cross_validation_splits(self, nb_splits=2, nb_repeats=5, seed=SEED):
+        if self.task == Task.REGRESSION:
+            splitter = RepeatedKFold(n_splits=nb_splits, n_repeats=nb_repeats, random_state=seed)
+            yield from splitter.split(self.X, self.y)
+        elif self.task == Task.FORECASTING:
+            splitter = TimeSeriesSplit(n_splits=nb_splits)
+            if self.X.index.nlevels == 1:
+                yield from splitter.split(self.X)
+            else:  # multiple instances per time step
+                # Find the instance with the most time steps
+                counts = self.X.groupby('id').count()
+                random_column_name = self.X.columns[0]
+                max_id = counts[counts[random_column_name] == counts[random_column_name].max()].index[0]
+                max_instance = self.X.loc[max_id]
+
+                # Split the time steps of this instance
+                splitter = TimeSeriesSplit(n_splits=nb_splits)
+                generator = splitter.split(max_instance)
+
+                # Use the same split for all instances, but look at the exact dates, not just the n first time steps
+                for (train_index, test_index) in generator:
+                    X_reset = self.X.reset_index()
+                    train_dates = max_instance.iloc[train_index].index
+                    max_train_date = max(train_dates)
+                    all_train_indices = np.empty(0, dtype=int)
+                    all_test_indices = np.empty(0, dtype=int)
+                    for i in X_reset['id'].unique():
+                        train_indices = X_reset[X_reset['id'] == i].index[
+                            X_reset[X_reset['id'] == i]['date'] <= max_train_date]
+                        test_indices = X_reset[X_reset['id'] == i].index[
+                            X_reset[X_reset['id'] == i]['date'] > max_train_date]
+                        all_train_indices = np.concatenate((all_train_indices, train_indices))
+                        all_test_indices = np.concatenate((all_test_indices, test_indices))
+                    yield all_train_indices, all_test_indices
+
+        else:
+            splitter = RepeatedStratifiedKFold(n_splits=nb_splits, n_repeats=nb_repeats, random_state=seed)
+            yield from splitter.split(self.X, self.y)
+
 
     def cross_validation(self, Itrain, Itest, force=False):
         if self.X is None or (self.y is None and self.task != Task.FORECASTING):
@@ -250,16 +295,16 @@ class Dataset:
         if self.ytrain is None or self.ytest is None:
             raise RuntimeError("train and test sets not loaded")
 
-        self.ytrain = transformer.fit_transform(self.ytrain.values.reshape(-1, 1)).ravel()
+        self.ytrain = pd.Series(transformer.fit_transform(self.ytrain.values.reshape(-1, 1)).ravel(), index=self.ytrain.index)
         if self.task == Task.FORECASTING:
-            self.Xtrain = pd.Series(self.ytrain).to_frame(name=self.Xtrain.columns[0])
+            self.Xtrain = self.ytrain.to_frame(name=self.Xtrain.columns[0])
         if self.yval is not None:
-            self.yval = transformer.transform(self.yval.values.reshape(-1, 1)).ravel()
+            self.yval = pd.Series(transformer.transform(self.yval.values.reshape(-1, 1)).ravel(), index=self.yval.index)
             if self.task == Task.FORECASTING:
-                self.Xval = pd.Series(self.yval).to_frame(name=self.Xval.columns[0])
-        self.ytest = transformer.transform(self.ytest.values.reshape(-1, 1)).ravel()
+                self.Xval = self.yval.to_frame(name=self.Xval.columns[0])
+        self.ytest = pd.Series(transformer.transform(self.ytest.values.reshape(-1, 1)).ravel(), index=self.ytest.index)
         if self.task == Task.FORECASTING:
-            self.Xtest = pd.Series(self.ytest).to_frame(name=self.Xtest.columns[0])
+            self.Xtest = self.ytest.to_frame(name=self.Xtest.columns[0])
         self.other_params["target_transformer"] = transformer
 
     def transform_features_custom(self, transformer, condition=None):
@@ -361,7 +406,6 @@ class Dataset:
             self.X[c] = outputs[i]
 
         self.X = self.X.astype(np.float32)
-
 
 def _rmse_metric(self, model, best_m):
     yhat = model.predict(self.dtest, output_margin=True)
@@ -948,6 +992,42 @@ class CoffeeSalesMonthlyNormalized(Dataset):
                 self.X.reset_index(drop=True, inplace=True)
             self.other_params['contextual_transform_feature'] = 'Nb_days'
 
+class SolarEnergyProductionDaily(Dataset):
+    def __init__(self):
+        super().__init__(Task.FORECASTING)
+        self.name = "solarenergyproductiondaily"
+
+    def load_dataset(self):
+        if self.X is None or self.y is None:
+            print(f"loading SolarEnergyProduction h5 file")
+            df = pd.read_hdf(f"{self.data_dir}/SolarEnergyProduction.h5", key='daily')
+
+            self.y = None
+            # noinspection PyUnresolvedReferences
+            self.X = df[['kWh']]
+
+    def model_params(self):
+        return {'seasonal': 'add'}
+
+class SolarEnergyProductionDailyNormalized(Dataset):
+    def __init__(self):
+        super().__init__(Task.FORECASTING)
+        self.name = "solarenergyproductiondailynormalized"
+
+    def load_dataset(self):
+        if self.X is None or self.y is None:
+            print(f"loading SolarEnergyProduction h5 file")
+            df = pd.read_hdf(f"{self.data_dir}/SolarEnergyProduction.h5", key='daily')
+
+            self.y = None
+            # noinspection PyUnresolvedReferences
+            self.X = df[['kWh', 'daylight_hours']]
+            self.other_params['contextual_transform_feature'] = 'daylight_hours'
+
+    def model_params(self):
+        return {'seasonal': 'add'}
+
+
 
 datasets = {"abalone": Abalone,
             "autompg": AutoMPG,  # Missing values
@@ -976,6 +1056,9 @@ datasets = {"abalone": Abalone,
             "onlinenewspopularitynormalized": OnlineNewsPopularityNormalized,
             "realestatevaluation": RealEstateValuation,
             "servo": Servo,
+            "solarenergyproductiondaily": SolarEnergyProductionDaily,
+            "solarenergyproductiondailynormalized": SolarEnergyProductionDailyNormalized,
+            "solarenergyproductiondailyfull": SolarEnergyProductionDailyFull,
             "winequality": WineQuality,
             "youtube": YouTube,
             "youtubenormalized": YouTubeNormalized,

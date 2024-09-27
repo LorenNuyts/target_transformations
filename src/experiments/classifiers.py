@@ -2,12 +2,14 @@ import abc
 import time
 
 import numpy as np
+import pandas as pd
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.linear_model import LogisticRegression, Lasso, Ridge
 from sklearn.metrics import root_mean_squared_error
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
-from .constants import SEED
-from ..data import Dataset
+from src.experiments.utils.constants import SEED
+from src.experiments.data import Dataset
 
 
 class AbstractClassifier(abc.ABC):
@@ -122,3 +124,52 @@ class GradientBoostingRegressorWrapper(AbstractClassifier):
     def update_lin_clf_alpha(self, alpha):
         pass
 
+
+class ExponentialSmoothingWrapper:
+    def __init__(self, **kwargs):
+        self.model_params = kwargs
+        self.clf = None
+
+    def fit(self, data: Dataset):
+        if data.Xtrain.index.nlevels == 1:
+            if data.Xtrain.index.freq is None:
+                data.Xtrain = data.Xtrain.asfreq(pd.infer_freq(data.Xtrain.index))
+            self.clf = ExponentialSmoothing(data.Xtrain, **self.model_params)
+            self.clf = self.clf.fit()
+        else:
+            self.clf = dict()
+            for i in data.Xtrain.index.get_level_values(0).unique():
+                train_data = data.Xtrain.loc[i]
+                if train_data.index.freq is None:
+                    train_data = train_data.asfreq(pd.infer_freq(train_data.index))
+
+                try:
+                    self.clf[i] = ExponentialSmoothing(train_data, **self.model_params)
+                    self.clf[i] = self.clf[i].fit()
+                except ValueError as e:
+                    if train_data.shape[0] < 5:
+                        print(f"Could not fit ExponentialSmoothing for {i} because of insufficient train data "
+                              f"(only {train_data.shape[0]} instances).")
+                    else:
+                        raise e
+
+        return self
+
+    def forecast(self, data):
+        if isinstance(self.clf, dict):
+            forecasts = []
+            for i in self.clf.keys():
+                if i not in data.Xtest.index:
+                    print(f"Could not forecast ExponentialSmoothing for {i} because of insufficient test data.")
+                    continue
+                n = len(data.Xtest.loc[i])
+                forecast_i = self.clf[i].forecast(n).to_frame()
+                forecast_i['id'] = i
+                forecasts.append(forecast_i)
+            forecasts_df = pd.concat(forecasts)
+            forecasts_df.set_index('id', append=True, inplace=True)
+            combined_df = forecasts_df.reorder_levels(['id', None])
+            combined_df.sort_index(inplace=True)
+            return combined_df
+        else:
+            return self.clf.forecast(len(data.Xtest))

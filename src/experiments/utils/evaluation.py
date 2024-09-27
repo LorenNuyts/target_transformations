@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_percentage_error
 
+from src.experiments.utils import elementwise_mean
+
 
 def relative_squared_error(y_true, y_pred):
     return np.sum(np.square(y_true - y_pred)) / np.sum(np.square(np.mean(y_true) - y_pred))
@@ -11,17 +13,64 @@ def symmetric_mean_absolute_percentage_error(y_true, y_pred):
 
 
 def compute_metrics(data, predictions, target_transformer_name):
+    if isinstance(predictions, pd.DataFrame) and predictions.index.nlevels > 1:
+        return compute_metrics_multiple_instances(data, predictions, target_transformer_name)
+    else:
+        return compute_metrics_single_instance(data, predictions, target_transformer_name)
+
+def compute_metrics_multiple_instances(data, predictions, target_transformer_name):
+    transformed_rse = []
+    transformed_mape = []
+    transformed_smape = []
+    transformed_error = []
+    back_transformed_rse = []
+    back_transformed_mape = []
+    back_transformed_smape = []
+    back_transformed_error = []
+    for i in predictions.index.get_level_values(0).unique():
+        all_test_data = data.ytest
+        all_Itest = data.Itest
+        data.ytest = data.ytest.loc[i]
+        data.Itest = data.Itest[all_test_data.index.get_loc(i)]
+
+        predictions_i = predictions.loc[i].squeeze()
+
+        transformed_rse_i, transformed_mape_i, transformed_smape_i, transformed_error_i, back_transformed_rse_i, back_transformed_mape_i, back_transformed_smape_i, back_transformed_error_i = compute_metrics_single_instance(data, predictions_i, target_transformer_name)
+        transformed_rse.append(transformed_rse_i)
+        transformed_mape.append(transformed_mape_i)
+        transformed_smape.append(transformed_smape_i)
+        transformed_error.append(transformed_error_i)
+        back_transformed_rse.append(back_transformed_rse_i)
+        back_transformed_mape.append(back_transformed_mape_i)
+        back_transformed_smape.append(back_transformed_smape_i)
+        back_transformed_error.append(back_transformed_error_i)
+
+        data.ytest = all_test_data
+        data.Itest = all_Itest
+    average_transformed_rse = np.nanmean(transformed_rse)
+    average_transformed_mape = np.nanmean(transformed_mape)
+    average_transformed_smape = np.nanmean(transformed_smape)
+    average_transformed_error = elementwise_mean(transformed_error)
+    average_back_transformed_rse = np.nanmean(back_transformed_rse)
+    average_back_transformed_mape = np.nanmean(back_transformed_mape)
+    average_back_transformed_smape = np.nanmean(back_transformed_smape)
+    average_back_transformed_error = elementwise_mean(back_transformed_error)
+    return (average_transformed_rse, average_transformed_mape, average_transformed_smape, average_transformed_error,
+            average_back_transformed_rse, average_back_transformed_mape, average_back_transformed_smape,
+            average_back_transformed_error)
+
+def compute_metrics_single_instance(data, predictions, target_transformer_name):
     # Compute RSE, MAPE, and SMAPE
-    predictions = predictions.values if isinstance(predictions, pd.Series) else predictions
+    predictions_values = predictions.values if isinstance(predictions, pd.Series) else predictions
     ytest = data.ytest.values if isinstance(data.ytest, pd.Series) else data.ytest
     # ytest = data.ytest.reset_index(drop=True)
-    transformed_rse = relative_squared_error(ytest, predictions)
-    transformed_mape = mean_absolute_percentage_error(ytest, predictions)
-    transformed_smape = symmetric_mean_absolute_percentage_error(ytest, predictions)
-    transformed_error = ytest - predictions
+    transformed_rse = relative_squared_error(ytest, predictions_values)
+    transformed_mape = mean_absolute_percentage_error(ytest, predictions_values)
+    transformed_smape = symmetric_mean_absolute_percentage_error(ytest, predictions_values)
+    transformed_error = ytest - predictions_values
 
     # Compute backtransformed RSE, MAPE, and SMAPE
-    back_transformed_pred = predictions
+    back_transformed_pred = predictions_values
     back_transformed_y = ytest
     transformation_failed = False
     if target_transformer_name is not None:

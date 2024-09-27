@@ -4,11 +4,11 @@ import numpy as np
 from scipy.optimize._optimize import BracketError
 from sklearn.model_selection import TimeSeriesSplit
 
-from src.experiments.data import Dataset, datasets
+from src.experiments.classifiers import ExponentialSmoothingWrapper
+from src.experiments.data import Dataset, datasets, Task
 from src.experiments.utils import load_results, get_clf_full_name, save_results
-from statsmodels.tsa.api import ExponentialSmoothing
 
-from src.experiments.utils.constants import get_transformer, Keys
+from src.experiments.utils.constants import get_transformer, Keys, SEED
 from src.experiments.utils.evaluation import compute_metrics
 
 clf_name = "ExponentialSmoothing"
@@ -22,13 +22,15 @@ def run(data: Dataset, target_transformer_name=None, suffix=""):
     if clf_full_name not in results:
         results[clf_full_name] = {}
 
-    nb_splits = 2 if "month" in data.name else 10
+    data.load_dataset()
+    assert data.task == Task.FORECASTING
+
+    nb_splits = 2 if data.X.shape[0] < 15 else 10
     if nb_splits - 1 in results[clf_full_name].keys():
         print("All folds already in results, skipping...")
         return
 
-    tscv = TimeSeriesSplit(n_splits=nb_splits)
-    data.load_dataset()
+    # tscv = TimeSeriesSplit(n_splits=nb_splits)
 
     all_transformed_rse = []
     all_transformed_mape = []
@@ -38,7 +40,7 @@ def run(data: Dataset, target_transformer_name=None, suffix=""):
     all_mape = []
     all_smape = []
     all_error = []
-    for i, (train_index, test_index) in enumerate(tscv.split(data.X)):
+    for i, (train_index, test_index) in enumerate(data.generate_cross_validation_splits(nb_splits, seed=SEED)):
         if i in results[clf_full_name].keys():
             print(f"Fold {i} already in results, skipping...")
             continue
@@ -55,9 +57,10 @@ def run(data: Dataset, target_transformer_name=None, suffix=""):
             transformer = get_transformer(target_transformer_name)
             data.transform_target_custom(transformer)
 
-        clf = ExponentialSmoothing(data.Xtrain)
-        clf = clf.fit()
-        predictions = clf.forecast(len(data.Xtest))
+        clf = ExponentialSmoothingWrapper(**data.model_params())
+
+        clf.fit(data)
+        predictions = clf.forecast(data)
 #
         transformed_rse, transformed_mape, transformed_smape, transformed_error, rse, mape, smape, error = compute_metrics(data, predictions, target_transformer_name)
         all_transformed_rse.append(transformed_rse)

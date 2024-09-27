@@ -4,6 +4,7 @@ import sys
 
 from src.experiments.data import datasets, Dataset
 from src.experiments.plots import plot_distribution_y, plot_error_bars
+from src.experiments.plots.plot_results import plot_rel_diff
 from src.experiments.utils import get_results_dir, get_file_name_base
 from src.experiments.utils.constants import Keys, get_transformer
 
@@ -109,3 +110,6 @@ if __name__ == '__main__':
                                                    # Keys.transformer_powertransformer,
                                                    # Keys.transformer_logtransformer,
                                                    Keys.transformer_lntransformer])
+
+    elif args.plot == 'rel_diff':
+        plot_rel_diff()

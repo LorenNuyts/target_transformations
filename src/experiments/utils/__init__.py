@@ -27,6 +27,24 @@ def round_sign_fig(x: float, i: int = 5) -> float:
     """
     return float('%.{}g'.format(i) % x)
 
+def elementwise_mean(arrays: List[np.ndarray]) -> np.ndarray:
+    """
+    Compute the elementwise mean of a list of numpy arrays. The arrays are padded with NaNs to the length of the
+    longest array.
+
+    Parameters
+    ----------
+    arrays : List[np.ndarray]
+        List of lists to compute the elementwise mean of.
+
+    Returns
+    -------
+    np.ndarray
+        The elementwise mean of the lists.
+    """
+    max_length = max(len(lst) for lst in arrays)
+    padded_arrays = np.array([np.pad(array, (0, max_length - array.shape[0]), constant_values=np.nan) for array in arrays])
+    return np.nanmean(padded_arrays, axis=0)
 
 def isworse(metric, reference):  # higher is better
     return metric < reference

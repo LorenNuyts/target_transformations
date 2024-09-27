@@ -8,8 +8,8 @@ from sklearn.model_selection import RepeatedStratifiedKFold, RepeatedKFold
 
 from src.experiments.data import Dataset, Task, datasets
 from src.experiments.utils import load_results, get_clf_full_name, save_results
-from src.experiments.utils.alpha_search import AlphaSearch
-from src.experiments.utils.classifiers import LassoTuned, RidgeRegressionTuned, GradientBoostingRegressorWrapper
+from src.experiments.alpha_search import AlphaSearch
+from src.experiments.classifiers import LassoTuned, RidgeRegressionTuned, GradientBoostingRegressorWrapper
 from src.experiments.utils.constants import SEED, get_transformer, Keys
 from src.experiments.utils.evaluation import compute_metrics
 
