@@ -480,6 +480,7 @@ def print_all_results_excel(datasets: List[str], metric: str,  experiment_name, 
 
 def load_results_txt(experiment_name, dataset_name, suffix=None):
     _, path_txt = get_paths(experiment_name, dataset_name, suffix=suffix)
+    print("Looking for file:", path_txt)
     return parse_txt_file(path_txt)
 
 
