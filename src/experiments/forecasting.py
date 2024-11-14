@@ -1,5 +1,4 @@
 import argparse
-
 import numpy as np
 from scipy.optimize._optimize import BracketError
 from sklearn.model_selection import TimeSeriesSplit
@@ -21,7 +20,7 @@ forecasting_clfs = {"ExponentialSmoothing": lambda d: ExponentialSmoothingWrappe
 
 NAME = "forecasting"
 
-MAX_NB_FOLDS = None
+MAX_NB_FOLDS = float('inf')
 
 
 def run(data: Dataset, clf_name, target_transformer_name=None, suffix=""):
@@ -49,7 +48,7 @@ def run(data: Dataset, clf_name, target_transformer_name=None, suffix=""):
     all_smape = []
     all_error = []
     for i, (train_index, test_index) in enumerate(data.generate_cross_validation_splits(nb_splits, seed=SEED)):
-        if MAX_NB_FOLDS is None or i >= MAX_NB_FOLDS:
+        if i >= MAX_NB_FOLDS:
             break
         if i in results[clf_full_name].keys():
             print(f"Fold {i} already in results, skipping...")
@@ -94,7 +93,7 @@ def run(data: Dataset, clf_name, target_transformer_name=None, suffix=""):
                                 Keys.transformed_rse: transformed_rse,
                                 Keys.transformed_mape: transformed_mape,
                                 Keys.transformed_smape: transformed_smape}
-    if len(all_rse) == nb_splits or (MAX_NB_FOLDS is not None and len(all_rse) >= MAX_NB_FOLDS):
+    if len(all_rse) == nb_splits or len(all_rse) >= MAX_NB_FOLDS:
         results[clf_full_name].update({Keys.average_rse: np.nanmean(all_rse),
                                   Keys.std_rse: np.nanstd(all_rse)})
         results[clf_full_name].update({Keys.average_mape: np.nanmean(all_mape),
