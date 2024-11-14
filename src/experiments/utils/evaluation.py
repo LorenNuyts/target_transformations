@@ -61,8 +61,8 @@ def compute_metrics_multiple_instances(data, predictions, target_transformer_nam
 
 def compute_metrics_single_instance(data, predictions, target_transformer_name):
     # Compute RSE, MAPE, and SMAPE
-    predictions_values = predictions.values if isinstance(predictions, pd.Series) else predictions
-    ytest = data.ytest.values if isinstance(data.ytest, pd.Series) else data.ytest
+    predictions_values = predictions.values if not isinstance(predictions, np.ndarray) else predictions
+    ytest = data.ytest.values if not isinstance(predictions, np.ndarray) else data.ytest
     # ytest = data.ytest.reset_index(drop=True)
     transformed_rse = relative_squared_error(ytest, predictions_values)
     transformed_mape = mean_absolute_percentage_error(ytest, predictions_values)

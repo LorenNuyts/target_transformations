@@ -2,12 +2,13 @@ import abc
 import math
 import os
 import warnings
-from typing import Optional
+from typing import Optional, Callable
 
 import joblib
 import enum
 import numpy as np
 import pandas as pd
+import pmdarima as pm
 import multiprocessing
 import time
 
@@ -57,7 +58,9 @@ class Dataset:
         self.yval = None
         self.other_params = {}
         self.missing_values = False
+        self.acronym = None
 
+    @property
     def name(self) -> str:
         return type(self).__name__ + self.name_suffix
 
@@ -143,8 +146,15 @@ class Dataset:
             splitter = RepeatedKFold(n_splits=nb_splits, n_repeats=nb_repeats, random_state=seed)
             yield from splitter.split(self.X, self.y)
         elif self.task == Task.FORECASTING:
-            splitter = TimeSeriesSplit(n_splits=nb_splits)
-            if self.X.index.nlevels == 1:
+            if self.X.index.nlevels == 1:  # single instance per time step
+                nb_timepoints = self.X.shape[0]
+            else:
+                nb_timepoints = self.X.index.levshape[1]
+            p50 = int(nb_timepoints * 0.5)
+            horizon = 12
+            splitter = pm.model_selection.RollingForecastCV(h=horizon, step=horizon, initial=p50)
+            # splitter = TimeSeriesSplit(n_splits=nb_splits)
+            if self.X.index.nlevels == 1: # single instance per time step
                 yield from splitter.split(self.X)
             else:  # multiple instances per time step
                 # Find the instance with the most time steps
@@ -154,7 +164,7 @@ class Dataset:
                 max_instance = self.X.loc[max_id]
 
                 # Split the time steps of this instance
-                splitter = TimeSeriesSplit(n_splits=nb_splits)
+                # splitter = TimeSeriesSplit(n_splits=nb_splits)
                 generator = splitter.split(max_instance)
 
                 # Use the same split for all instances, but look at the exact dates, not just the n first time steps
@@ -169,6 +179,7 @@ class Dataset:
                             X_reset[X_reset['id'] == i]['date'] <= max_train_date]
                         test_indices = X_reset[X_reset['id'] == i].index[
                             X_reset[X_reset['id'] == i]['date'] > max_train_date]
+                        test_indices = test_indices[:horizon]
                         all_train_indices = np.concatenate((all_train_indices, train_indices))
                         all_test_indices = np.concatenate((all_test_indices, test_indices))
                     yield all_train_indices, all_test_indices
@@ -241,6 +252,23 @@ class Dataset:
         y = pd.read_hdf(f"{self.data_dir}/{name}.h5", key="y")
 
         return X, y
+
+    def _load_pmdarima(self, name, data_id: Callable, index2date=False, date_format=None, force=False):
+        if not os.path.exists(f"{self.data_dir}/{name}.h5") or force:
+            print(f"loading {name} with {data_id}()")
+            X = data_id(as_series=True)
+            if index2date:
+                if date_format is None:
+                    X.index = pd.to_datetime(X.index)
+                else:
+                    X.index = pd.to_datetime(X.index, format=date_format)
+            X.to_hdf(f"{self.data_dir}/{name}.h5", key="X", complevel=9)
+            
+        print(f"loading {name} h5 file")
+        # noinspection PyUnresolvedReferences
+        X = pd.read_hdf(f"{self.data_dir}/{name}.h5", key="X")
+        # noinspection PyUnresolvedReferences
+        return X
 
     def minmax_normalize(self):
         if self.X is None:
@@ -474,13 +502,14 @@ class MultiBinClassDataset(Dataset):
             self.y = (y == self.class2)
 
     def name(self):
-        return f"{super().name()}{self.class1}v{self.class2}"
+        return f"{self.name}{self.class1}v{self.class2}"
 
 
 class Abalone(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "abalone"
+        self.acronym = "ABA"
+        # self.name = "abalone"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -495,7 +524,8 @@ class AutoMPG(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
         self.missing_values = True
-        self.name = "autompg"
+        self.acronym = "AMPG"
+        # self.name = "autompg"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -507,7 +537,8 @@ class AutoMPG(Dataset):
 class BikeSharing(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "bikesharing"
+        self.acronym = "BS"
+        # self.name = "bikesharing"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -520,7 +551,8 @@ class BikeSharing(Dataset):
 class BikeSharingFull(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "bikesharingfull"
+        self.acronym = "BS"
+        # self.name = "bikesharingfull"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -534,7 +566,8 @@ class BikeSharingFull(Dataset):
 class BikeSharingNormalized(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "bikesharingnormalized"
+        self.acronym = "BS"
+        # self.name = "bikesharingnormalized"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -558,7 +591,8 @@ class BikeSharingNormalized(Dataset):
 class Challenger(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "challenger"
+        self.acronym = "CH"
+        # self.name = "challenger"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -570,7 +604,8 @@ class Challenger(Dataset):
 class CombinedCyclePowerPlant(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "powerplant"
+        self.acronym = "CCPP"
+        # self.name = "powerplant"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -582,7 +617,8 @@ class CombinedCyclePowerPlant(Dataset):
 class ComputerHardware(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "computerhardware"
+        self.acronym = "CH"
+        # self.name = "computerhardware"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -594,7 +630,8 @@ class ComputerHardware(Dataset):
 class ConcreteCompressingStrength(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "concrete"
+        self.acronym = "CCS"
+        # self.name = "concrete"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -609,7 +646,8 @@ class EnergyEfficiency1(Dataset):
     """
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "energyefficiency1normalized1"
+        self.acronym = "EF1"
+        # self.name = "energyefficiency1normalized1"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -625,7 +663,8 @@ class EnergyEfficiency1Normalized2(Dataset):
     """
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "energyefficiency1normalized2"
+        self.acronym = "EF1"
+        # self.name = "energyefficiency1normalized2"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -641,7 +680,8 @@ class EnergyEfficiency1Normalized3(Dataset):
     """
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "energyefficiency1normalized3"
+        self.acronym = "EF1"
+        # self.name = "energyefficiency1normalized3"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -656,7 +696,8 @@ class EnergyEfficiency1Normalized4(Dataset):
     """
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "energyefficiency1normalized4"
+        self.acronym = "EF1"
+        # self.name = "energyefficiency1normalized4"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -671,7 +712,8 @@ class EnergyEfficiency1Normalized5(Dataset):
     """
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "energyefficiency1normalized5"
+        self.acronym = "EF1"
+        # self.name = "energyefficiency1normalized5"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -686,7 +728,8 @@ class EnergyEfficiency2(Dataset):
     """
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "energyefficiency2"
+        self.acronym = "EF2"
+        # self.name = "energyefficiency2"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -698,7 +741,8 @@ class EnergyEfficiency2(Dataset):
 class HeartFailure(Dataset):
     def __init__(self):
         super().__init__(Task.CLASSIFICATION)
-        self.name = "heartfailure"
+        self.acronym = "HF"
+        # self.name = "heartfailure"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -710,7 +754,8 @@ class HeartFailure(Dataset):
 class Iris(MulticlassDataset):
     def __init__(self):
         super().__init__(Task.MULTI_CLASSIFICATION)
-        self.name = "iris"
+        self.acronym = "IR"
+        # self.name = "iris"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -723,7 +768,8 @@ class Iris(MulticlassDataset):
 class LiverDisorder(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "liverdisorder"
+        self.acronym = "LD"
+        # self.name = "liverdisorder"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -735,7 +781,8 @@ class LiverDisorder(Dataset):
 class Obesity(Dataset):
     def __init__(self):
         super().__init__(Task.MULTI_CLASSIFICATION)
-        self.name = "obesity"
+        self.acronym = "OB"
+        # self.name = "obesity"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -749,7 +796,8 @@ class Obesity(Dataset):
 class OnlineNewsPopularity(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "onlinenewspopularity"
+        self.acronym = "ONP"
+        # self.name = "onlinenewspopularity"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -761,7 +809,8 @@ class OnlineNewsPopularity(Dataset):
 class OnlineNewsPopularityFull(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "onlinenewspopularityfull"
+        self.acronym = "ONP"
+        # self.name = "onlinenewspopularityfull"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -774,7 +823,8 @@ class OnlineNewsPopularityFull(Dataset):
 class OnlineNewsPopularityNormalized(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "onlinenewspopularitynormalized"
+        self.acronym = "ONP"
+        # self.name = "onlinenewspopularitynormalized"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -790,7 +840,8 @@ class OnlineNewsPopularityNormalized(Dataset):
 class Parkinsons1(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "parkinsons1"
+        self.acronym = "PK1"
+        # self.name = "parkinsons1"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -802,7 +853,8 @@ class Parkinsons1(Dataset):
 class Parkinsons2(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "parkinsons2"
+        self.acronym = "PK2"
+        # self.name = "parkinsons2"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -814,7 +866,8 @@ class Parkinsons2(Dataset):
 class RealEstateValuation(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "realestatevaluation"
+        self.acronym = "REV"
+        # self.name = "realestatevaluation"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -826,7 +879,8 @@ class RealEstateValuation(Dataset):
 class Servo(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "servo"
+        self.acronym = "SRV"
+        # self.name = "servo"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -839,7 +893,8 @@ class Servo(Dataset):
 class WineQuality(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "winequality"
+        self.acronym = "WQ"
+        # self.name = "winequality"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -851,7 +906,8 @@ class WineQuality(Dataset):
 class YouTube(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "youtube"
+        self.acronym = "YT"
+        # self.name = "youtube"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -867,7 +923,8 @@ class YouTube(Dataset):
 class YouTubeNormalized(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "youtubenormalized"
+        self.acronym = "YT"
+        # self.name = "youtubenormalized"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -896,7 +953,8 @@ class YouTubeNormalized(Dataset):
 class YouTubeLg(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "youtubelg"
+        self.acronym = "YT"
+        # self.name = "youtubelg"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -912,8 +970,9 @@ class YouTubeLg(Dataset):
 class YouTubePlus(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
+        self.acronym = "YT"
         self.missing_values = True
-        self.name = "youtubeplus"
+        # self.name = "youtubeplus"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -929,7 +988,8 @@ class YouTubePlus(Dataset):
 class YouTubeLgMin(Dataset):
     def __init__(self):
         super().__init__(Task.REGRESSION)
-        self.name = "youtubelgmin"
+        self.acronym = "YT"
+        # self.name = "youtubelgmin"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -945,7 +1005,8 @@ class YouTubeLgMin(Dataset):
 class CoffeeSalesDaily(Dataset):
     def __init__(self):
         super().__init__(Task.FORECASTING)
-        self.name = "coffeesalesdaily"
+        self.acronym = "CS"
+        # self.name = "coffeesalesdaily"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -960,7 +1021,8 @@ class CoffeeSalesDaily(Dataset):
 class CoffeeSalesMonthly(Dataset):
     def __init__(self):
         super().__init__(Task.FORECASTING)
-        self.name = "coffeesalesmonthly"
+        self.acronym = "CS"
+        # self.name = "coffeesalesmonthly"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -975,7 +1037,8 @@ class CoffeeSalesMonthly(Dataset):
 class CoffeeSalesMonthlyNormalized(Dataset):
     def __init__(self):
         super().__init__(Task.FORECASTING)
-        self.name = "coffeesalesmonthlynormalized"
+        self.acronym = "CS"
+        # self.name = "coffeesalesmonthlynormalized"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -995,7 +1058,8 @@ class CoffeeSalesMonthlyNormalized(Dataset):
 class SolarEnergyProductionDaily(Dataset):
     def __init__(self):
         super().__init__(Task.FORECASTING)
-        self.name = "solarenergyproductiondaily"
+        self.acronym = "SEP"
+        # self.name = "solarenergyproductiondaily"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -1012,7 +1076,8 @@ class SolarEnergyProductionDaily(Dataset):
 class SolarEnergyProductionDailyNormalized(Dataset):
     def __init__(self):
         super().__init__(Task.FORECASTING)
-        self.name = "solarenergyproductiondailynormalized"
+        self.acronym = "SEP"
+        # self.name = "solarenergyproductiondailynormalized"
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -1022,12 +1087,44 @@ class SolarEnergyProductionDailyNormalized(Dataset):
             self.y = None
             # noinspection PyUnresolvedReferences
             self.X = df[['kWh', 'daylight_hours']]
+            # # Find the instance with the most time steps
+            # counts = self.X.groupby('id').count()
+            # random_column_name = self.X.columns[0]
+            # max_id = counts[counts[random_column_name] == counts[random_column_name].max()].index[0]
+            # self.X = self.X.loc[max_id]
             self.other_params['contextual_transform_feature'] = 'daylight_hours'
 
     def model_params(self):
         return {'seasonal': 'add'}
 
+class SunspotsMonthly(Dataset):
+    def __init__(self):
+        super().__init__(Task.FORECASTING)
+        self.acronym = "SS"
 
+    def load_dataset(self):
+        if self.X is None or self.y is None:
+            self.X = self._load_pmdarima("SunSpots", pm.datasets.load_sunspots, index2date=True, force=True)
+            # noinspection PyUnresolvedReferences
+            self.X.index  = self.X.index.to_period('M')
+            self.y = None
+
+    def model_params(self):
+        return {'seasonal': 'add'}
+        # return {}
+
+imbalanced_distribution_datasets = {
+            "autompg": AutoMPG,  # Missing values
+            "bikesharing": BikeSharing,  # Does not converge
+            "powerplant": CombinedCyclePowerPlant,
+            "concrete": ConcreteCompressingStrength,
+            "energyefficiency1": EnergyEfficiency1,
+            "energyefficiency2": EnergyEfficiency2,
+            "liverdisorder": LiverDisorder,
+            "onlinenewspopularity": OnlineNewsPopularity,  # Does not converge
+            "realestatevaluation": RealEstateValuation,
+            "servo": Servo,
+            }
 
 datasets = {"abalone": Abalone,
             "autompg": AutoMPG,  # Missing values
@@ -1058,6 +1155,7 @@ datasets = {"abalone": Abalone,
             "servo": Servo,
             "solarenergyproductiondaily": SolarEnergyProductionDaily,
             "solarenergyproductiondailynormalized": SolarEnergyProductionDailyNormalized,
+            "sunspotsmonthly": SunspotsMonthly,
             "winequality": WineQuality,
             "youtube": YouTube,
             "youtubenormalized": YouTubeNormalized,
@@ -1065,3 +1163,4 @@ datasets = {"abalone": Abalone,
             "youtube+": YouTubePlus,
             "youtubelg-": YouTubeLgMin,
             }
+

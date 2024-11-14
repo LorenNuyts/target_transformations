@@ -61,6 +61,10 @@ class Keys:
     all_transformers = [transformer_normalized, transformer_quantile_uniform, transformer_quantile_normal,
                         transformer_robustscaler, transformer_powertransformer, transformer_logtransformer,
                         transformer_lntransformer]
+    transformer_acronyms = {transformer_normalized: "Norm.", transformer_quantile_uniform: "Uniform",
+                            transformer_quantile_normal: "Normal", transformer_powertransformer: "Yeo-Johnson",
+                            transformer_logtransformer: "Log10", transformer_lntransformer: "Ln",
+                            transformer_robustscaler: "Robust"}
 
 
 def get_transformer(transformer_name):

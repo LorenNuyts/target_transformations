@@ -14,13 +14,13 @@ base = os.path.dirname(os.path.realpath(__file__))
 def plot_target_distribution(dataset: Dataset, target_transformer_name=None):
     dataset.load_dataset()
     results_dir = get_results_dir()
-    save_path = os.path.join(results_dir, "plots", "target_distribution", dataset.name(),
+    save_path = os.path.join(results_dir, "plots", "target_distribution", dataset.name,
                              f"{target_transformer_name if target_transformer_name is not None else 'no_transformation'}"
                              f"_distribution.png")
     if target_transformer_name is not None:
         transformer = get_transformer(target_transformer_name)
         y = transformer.fit_transform(dataset.y.values.reshape(-1, 1)).ravel()
-        plot_distribution_y(y, f"{dataset.name()}: {target_transformer_name}",
+        plot_distribution_y(y, f"{dataset.name}: {target_transformer_name}",
                             save_path=save_path)
     # if transformer == Keys.transformer_normalized:
     #     y_mean = data.y.mean()
@@ -37,7 +37,7 @@ def plot_target_distribution(dataset: Dataset, target_transformer_name=None):
     #                         save_path=os.path.join(results_dir, f"{data.name()}_quantile_normal_distribution.png"))
 
     else:
-        plot_distribution_y(dataset.y, f"{dataset.name()}: Entire dataset",
+        plot_distribution_y(dataset.y, f"{dataset.name}: Entire dataset",
                             save_path=save_path)
 
 

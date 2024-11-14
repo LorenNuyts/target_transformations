@@ -6,10 +6,11 @@ import numpy as np
 from scipy.optimize._optimize import BracketError
 from sklearn.model_selection import RepeatedStratifiedKFold, RepeatedKFold
 
-from src.experiments.data import Dataset, Task, datasets
+from src.experiments.data import Dataset, Task, datasets, imbalanced_distribution_datasets
 from src.experiments.utils import load_results, get_clf_full_name, save_results
 from src.experiments.alpha_search import AlphaSearch
-from src.experiments.classifiers import LassoTuned, RidgeRegressionTuned, GradientBoostingRegressorWrapper
+from src.experiments.classifiers import LassoTuned, RidgeRegressionTuned, GradientBoostingRegressorWrapper, \
+    SupportVectorRegressorWrapper
 from src.experiments.utils.constants import SEED, get_transformer, Keys
 from src.experiments.utils.evaluation import compute_metrics
 
@@ -18,10 +19,11 @@ base = os.path.dirname(os.path.realpath(__file__))
 DEFAULT_CLFS = [
     LassoTuned(SEED),
     RidgeRegressionTuned(SEED),
-    GradientBoostingRegressorWrapper(SEED)
+    GradientBoostingRegressorWrapper(SEED),
+    SupportVectorRegressorWrapper(SEED)
 ]
 
-NAME = "transform_target"
+NAME = "imbalanced_distribution"
 
 # feature_transform_condition_default = skewed_columns
 feature_transform_condition_default = None
@@ -184,7 +186,7 @@ if __name__ == '__main__':
     feature_transformer_ = args.feature_transformer
     suffix_ = args.suffix
 
-    all_datasets = list(datasets.keys())
+    all_datasets = list(imbalanced_distribution_datasets.keys())
 
     if dataset_ == 'all':
         for dataset_ in all_datasets:

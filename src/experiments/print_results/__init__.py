@@ -186,24 +186,6 @@ def find_most_recent_file(experiment_name, dataset_name):
 #     return scores, base_config
 
 
-def extract_metrics(results, metrics, method, name):
-    values = {}
-    for nb_metric, (metric_name, get_metric) in enumerate(metrics.items()):
-        try:
-            round_i = 0 if 'time' in metric_name and 'filtering' not in metric_name else 3
-            value = round(get_metric(results, method, name), round_i)
-            if round_i == 0:
-                value = int(value)
-            std = round(all_metrics[metric_name.replace('average', 'std')](results, method, name), round_i)
-            if round_i == 0:
-                if not math.isnan(std):
-                    std = int(std)
-            values[metric_name] = value, std
-        except KeyError:
-            values[metric_name] = None, None
-    return values
-
-
 # def fill_metrics(metric_values, table, configs, i, j):
 #     for nb_metric, (metric_name, values) in enumerate(metric_values.items()):
 #         (value, std) = values

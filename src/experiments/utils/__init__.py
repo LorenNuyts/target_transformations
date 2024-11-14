@@ -258,3 +258,7 @@ def get_results_dir():
             path = "/".join(splitted[:pos])
             return os.path.join(path, "results")
 
+def replace_last_occurences(s: str, substr_old: str, substr_new: str, nb_occurences: int) -> str:
+    li = s.rsplit(substr_old, nb_occurences)
+    return substr_new.join(li)
+

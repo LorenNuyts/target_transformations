@@ -4,19 +4,27 @@ import numpy as np
 from scipy.optimize._optimize import BracketError
 from sklearn.model_selection import TimeSeriesSplit
 
-from src.experiments.classifiers import ExponentialSmoothingWrapper
+from src.experiments.classifiers import ExponentialSmoothingWrapper, AutoArimaWrapper, GBForecaster
 from src.experiments.data import Dataset, datasets, Task
 from src.experiments.utils import load_results, get_clf_full_name, save_results
 
 from src.experiments.utils.constants import get_transformer, Keys, SEED
 from src.experiments.utils.evaluation import compute_metrics
 
-clf_name = "ExponentialSmoothing"
+# clf_name = "ExponentialSmoothing"
+# clf_name = "AutoArima"
+forecasting_clfs = {"ExponentialSmoothing": lambda d: ExponentialSmoothingWrapper(**d.model_params()),
+                    "AutoArima": lambda _: AutoArimaWrapper(),
+                    "GBForecaster": lambda _: GBForecaster(window_length=52, strategy='recursive')
+                    }
+
 
 NAME = "forecasting"
 
+MAX_NB_FOLDS = None
 
-def run(data: Dataset, target_transformer_name=None, suffix=""):
+
+def run(data: Dataset, clf_name, target_transformer_name=None, suffix=""):
     results = load_results(NAME, data.name, suffix=suffix, reset=False)
     clf_full_name = get_clf_full_name(clf_name, target_transformer_name)
     if clf_full_name not in results:
@@ -41,6 +49,8 @@ def run(data: Dataset, target_transformer_name=None, suffix=""):
     all_smape = []
     all_error = []
     for i, (train_index, test_index) in enumerate(data.generate_cross_validation_splits(nb_splits, seed=SEED)):
+        if MAX_NB_FOLDS is not None and i >= MAX_NB_FOLDS:
+            break
         if i in results[clf_full_name].keys():
             print(f"Fold {i} already in results, skipping...")
             continue
@@ -57,7 +67,10 @@ def run(data: Dataset, target_transformer_name=None, suffix=""):
             transformer = get_transformer(target_transformer_name)
             data.transform_target_custom(transformer)
 
-        clf = ExponentialSmoothingWrapper(**data.model_params())
+        clf = forecasting_clfs[clf_name](data)
+        # clf = ExponentialSmoothingWrapper(**data.model_params())
+        # clf = AutoArimaWrapper()
+        # clf = GBForecaster(window_length=52, strategy='recursive')
 
         clf.fit(data)
         predictions = clf.forecast(data)
@@ -81,7 +94,7 @@ def run(data: Dataset, target_transformer_name=None, suffix=""):
                                 Keys.transformed_rse: transformed_rse,
                                 Keys.transformed_mape: transformed_mape,
                                 Keys.transformed_smape: transformed_smape}
-    if len(all_rse) == nb_splits:
+    if len(all_rse) == nb_splits or len(all_rse) >= MAX_NB_FOLDS:
         results[clf_full_name].update({Keys.average_rse: np.nanmean(all_rse),
                                   Keys.std_rse: np.nanstd(all_rse)})
         results[clf_full_name].update({Keys.average_mape: np.nanmean(all_mape),
@@ -99,18 +112,19 @@ def run(data: Dataset, target_transformer_name=None, suffix=""):
 
 
 def run_all_target_transformers(dataset: Dataset, suffix):
-    run(dataset, suffix=suffix)
-    run(dataset, target_transformer_name=Keys.transformer_normalized, suffix=suffix)
-    run(dataset, target_transformer_name=Keys.transformer_quantile_uniform, suffix=suffix)
-    run(dataset, target_transformer_name=Keys.transformer_quantile_normal, suffix=suffix)
-    run(dataset, target_transformer_name=Keys.transformer_robustscaler, suffix=suffix)
-    try:
-        run(dataset,  target_transformer_name=Keys.transformer_powertransformer, suffix=suffix)
-    except (ValueError, BracketError) as e:
-        print(f"PowerTransformer failed for {dataset.name()}")
-
-    run(dataset, target_transformer_name=Keys.transformer_logtransformer, suffix=suffix)
-    run(dataset, target_transformer_name=Keys.transformer_lntransformer, suffix=suffix)
+    for clf_name in forecasting_clfs.keys():
+        run(dataset, clf_name, suffix=suffix)
+    # run(dataset, target_transformer_name=Keys.transformer_normalized, suffix=suffix)
+    # run(dataset, target_transformer_name=Keys.transformer_quantile_uniform, suffix=suffix)
+    # run(dataset, target_transformer_name=Keys.transformer_quantile_normal, suffix=suffix)
+    # run(dataset, target_transformer_name=Keys.transformer_robustscaler, suffix=suffix)
+    # try:
+    #     run(dataset,  target_transformer_name=Keys.transformer_powertransformer, suffix=suffix)
+    # except (ValueError, BracketError) as e:
+    #     print(f"PowerTransformer failed for {dataset.name}")
+    #
+    # run(dataset, target_transformer_name=Keys.transformer_logtransformer, suffix=suffix)
+    # run(dataset, target_transformer_name=Keys.transformer_lntransformer, suffix=suffix)
 
 
 if __name__ == '__main__':
