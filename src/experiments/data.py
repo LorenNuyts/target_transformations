@@ -59,6 +59,7 @@ class Dataset:
         self.other_params = {}
         self.missing_values = False
         self.acronym = None
+        self.forecasting_horizon = None
 
     @property
     def name(self) -> str:
@@ -151,8 +152,7 @@ class Dataset:
             else:
                 nb_timepoints = self.X.index.levshape[1]
             p50 = int(nb_timepoints * 0.5)
-            horizon = 12
-            splitter = pm.model_selection.RollingForecastCV(h=horizon, step=horizon, initial=p50)
+            splitter = pm.model_selection.RollingForecastCV(h=self.forecasting_horizon, step=self.forecasting_horizon, initial=p50)
             # splitter = TimeSeriesSplit(n_splits=nb_splits)
             if self.X.index.nlevels == 1: # single instance per time step
                 yield from splitter.split(self.X)
@@ -179,7 +179,7 @@ class Dataset:
                             X_reset[X_reset['id'] == i]['date'] <= max_train_date]
                         test_indices = X_reset[X_reset['id'] == i].index[
                             X_reset[X_reset['id'] == i]['date'] > max_train_date]
-                        test_indices = test_indices[:horizon]
+                        test_indices = test_indices[:self.forecasting_horizon]
                         all_train_indices = np.concatenate((all_train_indices, train_indices))
                         all_test_indices = np.concatenate((all_test_indices, test_indices))
                     yield all_train_indices, all_test_indices
@@ -1059,6 +1059,7 @@ class SolarEnergyProductionDaily(Dataset):
     def __init__(self):
         super().__init__(Task.FORECASTING)
         self.acronym = "SEP"
+        self.forecasting_horizon = 52
         # self.name = "solarenergyproductiondaily"
 
     def load_dataset(self):
@@ -1077,6 +1078,7 @@ class SolarEnergyProductionDailyNormalized(Dataset):
     def __init__(self):
         super().__init__(Task.FORECASTING)
         self.acronym = "SEP"
+        self.forecasting_horizon = 52
         # self.name = "solarenergyproductiondailynormalized"
 
     def load_dataset(self):
@@ -1101,6 +1103,7 @@ class SunspotsMonthly(Dataset):
     def __init__(self):
         super().__init__(Task.FORECASTING)
         self.acronym = "SS"
+        self.forecasting_horizon = 12
 
     def load_dataset(self):
         if self.X is None or self.y is None:

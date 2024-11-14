@@ -49,7 +49,7 @@ def run(data: Dataset, clf_name, target_transformer_name=None, suffix=""):
     all_smape = []
     all_error = []
     for i, (train_index, test_index) in enumerate(data.generate_cross_validation_splits(nb_splits, seed=SEED)):
-        if MAX_NB_FOLDS is not None and i >= MAX_NB_FOLDS:
+        if MAX_NB_FOLDS is None or i >= MAX_NB_FOLDS:
             break
         if i in results[clf_full_name].keys():
             print(f"Fold {i} already in results, skipping...")
