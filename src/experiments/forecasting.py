@@ -94,7 +94,7 @@ def run(data: Dataset, clf_name, target_transformer_name=None, suffix=""):
                                 Keys.transformed_rse: transformed_rse,
                                 Keys.transformed_mape: transformed_mape,
                                 Keys.transformed_smape: transformed_smape}
-    if len(all_rse) == nb_splits or len(all_rse) >= MAX_NB_FOLDS:
+    if len(all_rse) == nb_splits or (MAX_NB_FOLDS is not None and len(all_rse) >= MAX_NB_FOLDS):
         results[clf_full_name].update({Keys.average_rse: np.nanmean(all_rse),
                                   Keys.std_rse: np.nanstd(all_rse)})
         results[clf_full_name].update({Keys.average_mape: np.nanmean(all_mape),
