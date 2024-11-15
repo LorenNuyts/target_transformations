@@ -1022,6 +1022,7 @@ class CoffeeSalesMonthly(Dataset):
     def __init__(self):
         super().__init__(Task.FORECASTING)
         self.acronym = "CS"
+        self.forecasting_horizon = 1
         # self.name = "coffeesalesmonthly"
 
     def load_dataset(self):
@@ -1038,6 +1039,7 @@ class CoffeeSalesMonthlyNormalized(Dataset):
     def __init__(self):
         super().__init__(Task.FORECASTING)
         self.acronym = "CS"
+        self.forecasting_horizon = 1
         # self.name = "coffeesalesmonthlynormalized"
 
     def load_dataset(self):
@@ -1116,6 +1118,25 @@ class SunspotsMonthly(Dataset):
         return {'seasonal': 'add'}
         # return {}
 
+class SunspotsMonthlyNormalized(Dataset):
+    def __init__(self):
+        super().__init__(Task.FORECASTING)
+        self.acronym = "CS"
+        self.forecasting_horizon = 12
+
+    def load_dataset(self):
+        if self.X is None or self.y is None:
+            # noinspection PyUnresolvedReferences
+            self.X: pd.DataFrame = self._load_pmdarima("SunSpots", pm.datasets.load_sunspots, index2date=True, force=True).to_frame()
+
+            self.X.index = self.X.index.to_period('M')
+            self.y = None
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.X['Nb_days'] = self.X.index.days_in_month
+                # self.X.reset_index(drop=True, inplace=True)
+            self.other_params['contextual_transform_feature'] = 'Nb_days'
+
 imbalanced_distribution_datasets = {
             "autompg": AutoMPG,  # Missing values
             "bikesharing": BikeSharing,  # Does not converge
@@ -1128,6 +1149,16 @@ imbalanced_distribution_datasets = {
             "realestatevaluation": RealEstateValuation,
             "servo": Servo,
             }
+
+forecasting_datasets = {
+    "coffeesalesdaily": CoffeeSalesDaily,
+    "coffeesalesmonthly": CoffeeSalesMonthly,
+    "coffeesalesmonthlynormalized": CoffeeSalesMonthlyNormalized,
+    "solarenergyproductiondaily": SolarEnergyProductionDaily,
+    "solarenergyproductiondailynormalized": SolarEnergyProductionDailyNormalized,
+    "sunspotsmonthly": SunspotsMonthly,
+    "sunspotsmonthlynormalized": SunspotsMonthlyNormalized,
+}
 
 datasets = {"abalone": Abalone,
             "autompg": AutoMPG,  # Missing values
@@ -1159,6 +1190,7 @@ datasets = {"abalone": Abalone,
             "solarenergyproductiondaily": SolarEnergyProductionDaily,
             "solarenergyproductiondailynormalized": SolarEnergyProductionDailyNormalized,
             "sunspotsmonthly": SunspotsMonthly,
+            "sunspotsmonthlynormalized": SunspotsMonthlyNormalized,
             "winequality": WineQuality,
             "youtube": YouTube,
             "youtubenormalized": YouTubeNormalized,
