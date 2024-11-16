@@ -94,21 +94,21 @@ def run(data: Dataset, clf_name, target_transformer_name=None, suffix=""):
                                 Keys.transformed_rse: transformed_rse,
                                 Keys.transformed_mape: transformed_mape,
                                 Keys.transformed_smape: transformed_smape}
-    if len(all_rse) == nb_splits or len(all_rse) >= MAX_NB_FOLDS:
-        results[clf_full_name].update({Keys.average_rse: np.nanmean(all_rse),
-                                  Keys.std_rse: np.nanstd(all_rse)})
-        results[clf_full_name].update({Keys.average_mape: np.nanmean(all_mape),
-                                    Keys.std_mape: np.nanstd(all_mape)})
-        results[clf_full_name].update({Keys.average_smape: np.nanmean(all_smape),
-                                    Keys.std_smape: np.nanstd(all_smape)})
-        results[clf_full_name].update({Keys.average_transformed_rse: np.nanmean(all_transformed_rse),
-                                    Keys.std_transformed_rse: np.nanstd(all_transformed_rse)})
-        results[clf_full_name].update({Keys.average_transformed_mape: np.nanmean(all_transformed_mape),
-                                    Keys.std_transformed_mape: np.nanstd(all_transformed_mape)})
-        results[clf_full_name].update({Keys.average_transformed_smape: np.nanmean(all_transformed_smape),
-                                    Keys.std_transformed_smape: np.nanstd(all_transformed_smape)})
+    # if len(all_rse) == nb_splits or len(all_rse) >= MAX_NB_FOLDS:
+    results[clf_full_name].update({Keys.average_rse: np.nanmean(all_rse),
+                              Keys.std_rse: np.nanstd(all_rse)})
+    results[clf_full_name].update({Keys.average_mape: np.nanmean(all_mape),
+                                Keys.std_mape: np.nanstd(all_mape)})
+    results[clf_full_name].update({Keys.average_smape: np.nanmean(all_smape),
+                                Keys.std_smape: np.nanstd(all_smape)})
+    results[clf_full_name].update({Keys.average_transformed_rse: np.nanmean(all_transformed_rse),
+                                Keys.std_transformed_rse: np.nanstd(all_transformed_rse)})
+    results[clf_full_name].update({Keys.average_transformed_mape: np.nanmean(all_transformed_mape),
+                                Keys.std_transformed_mape: np.nanstd(all_transformed_mape)})
+    results[clf_full_name].update({Keys.average_transformed_smape: np.nanmean(all_transformed_smape),
+                                Keys.std_transformed_smape: np.nanstd(all_transformed_smape)})
 
-        save_results(results, NAME, dataset_, suffix=suffix)
+    save_results(results, NAME, dataset_, suffix=suffix)
 
 
 def run_all_target_transformers(dataset: Dataset, suffix):
