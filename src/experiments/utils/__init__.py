@@ -229,7 +229,7 @@ def get_paths(experiment_name, dataset_name, suffix=None):
     #     splitted = base.split("/")
     #     pos = splitted.index("src")
     #     base = "/".join(splitted[:pos])
-    file_name = get_file_name_base(dataset_name, suffix)
+    file_name = get_file_name_base(dataset_name.lower(), suffix)
     path_start = os.path.join(results_dir, experiment_name, file_name)
 
     if not os.path.exists(os.path.dirname(path_start)):

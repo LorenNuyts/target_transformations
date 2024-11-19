@@ -21,6 +21,7 @@ forecasting_clfs = {
 
 NAME = "forecasting"
 
+# MAX_NB_FOLDS = 2
 MAX_NB_FOLDS = float('inf')
 
 
