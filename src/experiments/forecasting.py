@@ -13,8 +13,8 @@ from src.experiments.utils.evaluation import compute_metrics
 # clf_name = "ExponentialSmoothing"
 # clf_name = "AutoArima"
 forecasting_clfs = {
-    "ExponentialSmoothing": lambda d: ExponentialSmoothingWrapper(**d.model_params()),
-    "AutoArima": lambda _: AutoArimaWrapper(),
+    # "ExponentialSmoothing": lambda d: ExponentialSmoothingWrapper(**d.model_params()),
+    # "AutoArima": lambda _: AutoArimaWrapper(),
     "GBForecaster": lambda d: GBForecaster(window_length=d.forecasting_horizon, strategy='recursive')
                     }
 
@@ -25,7 +25,7 @@ NAME = "forecasting"
 MAX_NB_FOLDS = float('inf')
 
 
-def run(data: Dataset, clf_name, target_transformer_name=None, suffix=""):
+def run(data: Dataset, clf_name, target_transformer_name=None, suffix="", force=False):
     results = load_results(NAME, data.name, suffix=suffix, reset=False)
     clf_full_name = get_clf_full_name(clf_name, target_transformer_name)
     if clf_full_name not in results:
@@ -35,7 +35,7 @@ def run(data: Dataset, clf_name, target_transformer_name=None, suffix=""):
     assert data.task == Task.FORECASTING
 
     nb_splits = 2 if data.X.shape[0] < 15 else 10
-    if nb_splits - 1 in results[clf_full_name].keys():
+    if nb_splits - 1 in results[clf_full_name].keys() and not force:
         print("All folds already in results, skipping...")
         return
 
@@ -52,7 +52,7 @@ def run(data: Dataset, clf_name, target_transformer_name=None, suffix=""):
     for i, (train_index, test_index) in enumerate(data.generate_cross_validation_splits(nb_splits, seed=SEED)):
         if i >= MAX_NB_FOLDS:
             break
-        if i in results[clf_full_name].keys():
+        if i in results[clf_full_name].keys() and not force:
             print(f"Fold {i} already in results, skipping...")
             continue
         else:
@@ -112,9 +112,9 @@ def run(data: Dataset, clf_name, target_transformer_name=None, suffix=""):
     save_results(results, NAME, dataset_, suffix=suffix)
 
 
-def run_all_target_transformers(dataset: Dataset, suffix):
+def run_all_target_transformers(dataset: Dataset, suffix, force=False):
     for clf_name in forecasting_clfs.keys():
-        run(dataset, clf_name, suffix=suffix)
+        run(dataset, clf_name, suffix=suffix, force=force)
     # run(dataset, target_transformer_name=Keys.transformer_normalized, suffix=suffix)
     # run(dataset, target_transformer_name=Keys.transformer_quantile_uniform, suffix=suffix)
     # run(dataset, target_transformer_name=Keys.transformer_quantile_normal, suffix=suffix)
@@ -134,9 +134,11 @@ if __name__ == '__main__':
     # parser.add_argument('--plot_error', action='store_true')
     # parser.add_argument("--auc", type=float, nargs="?", default=default_auc_percentage)
     parser.add_argument("--suffix", type=str, nargs="?", default="")
+    parser.add_argument("--force", action='store_true')
     args = parser.parse_args()
     dataset_ = args.dataset
     suffix_ = args.suffix
+    force_ = args.force
 
     all_datasets = list(datasets.keys())
     # run(datasets[dataset_](), suffix=suffix_)
@@ -144,6 +146,6 @@ if __name__ == '__main__':
     if dataset_ == 'all':
         for dataset_ in all_datasets:
             print(f"Running {dataset_}...")
-            run_all_target_transformers(datasets[dataset_](), suffix_)
+            run_all_target_transformers(datasets[dataset_](), suffix_, force_)
     else:
-        run_all_target_transformers(datasets[dataset_.lower()](), suffix_)
+        run_all_target_transformers(datasets[dataset_.lower()](), suffix_, force_)

@@ -43,8 +43,8 @@ if __name__ == '__main__':
 
     if experiment_ == 'imbalanced_distribution':
         from src.experiments.imbalanced_distribution import DEFAULT_CLFS
-        clfs = DEFAULT_CLFS[0:2]
-        # clfs = DEFAULT_CLFS[2:4]
+        # clfs = DEFAULT_CLFS[0:2]
+        clfs = DEFAULT_CLFS[2:4]
         column_order = [get_clf_full_name(clf.name, transformer,
                                                                 feature_transformer_name).replace(' ', '')
                                               for clf in clfs for transformer in [None] + Keys.all_transformers]
