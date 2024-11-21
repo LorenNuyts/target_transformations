@@ -13,8 +13,8 @@ from src.experiments.utils.evaluation import compute_metrics
 # clf_name = "ExponentialSmoothing"
 # clf_name = "AutoArima"
 forecasting_clfs = {
-    # "ExponentialSmoothing": lambda d: ExponentialSmoothingWrapper(**d.model_params()),
-    # "AutoArima": lambda _: AutoArimaWrapper(),
+    "ExponentialSmoothing": lambda d: ExponentialSmoothingWrapper(**d.model_params()),
+    "AutoArima": lambda _: AutoArimaWrapper(),
     "GBForecaster": lambda d: GBForecaster(window_length=d.forecasting_horizon, strategy='recursive')
                     }
 
