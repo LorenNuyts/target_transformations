@@ -1105,7 +1105,7 @@ class SunspotsMonthly(Dataset):
     def __init__(self):
         super().__init__(Task.FORECASTING)
         self.acronym = "SS"
-        self.forecasting_horizon = 12
+        self.forecasting_horizon = 52
 
     def load_dataset(self):
         if self.X is None or self.y is None:
@@ -1122,7 +1122,7 @@ class SunspotsMonthlyNormalized(Dataset):
     def __init__(self):
         super().__init__(Task.FORECASTING)
         self.acronym = "CS"
-        self.forecasting_horizon = 12
+        self.forecasting_horizon = 52
 
     def load_dataset(self):
         if self.X is None or self.y is None:
