@@ -12,16 +12,16 @@ from src.experiments.utils.evaluation import compute_metrics
 
 # clf_name = "ExponentialSmoothing"
 forecasting_clfs = {
-    "ExponentialSmoothing": lambda d: ExponentialSmoothingWrapper(**d.model_params()),
+    # "ExponentialSmoothing": lambda d: ExponentialSmoothingWrapper(**d.model_params()),
     "GBForecaster": lambda d: GBForecaster(window_length=d.forecasting_horizon, strategy='recursive'),
-    "AutoArima": lambda _: AutoArimaWrapper(),
+    # "AutoArima": lambda _: AutoArimaWrapper(),
                     }
 # clf_name = "AutoArima"
 
 
 NAME = "forecasting"
 
-# MAX_NB_FOLDS = 2
+# MAX_NB_FOLDS = 5
 MAX_NB_FOLDS = float('inf')
 
 

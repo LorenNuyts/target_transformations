@@ -1038,7 +1038,7 @@ class CoffeeSalesMonthly(Dataset):
 class CoffeeSalesMonthlyNormalized(Dataset):
     def __init__(self):
         super().__init__(Task.FORECASTING)
-        self.acronym = "CS"
+        self.acronym = "CSn"
         self.forecasting_horizon = 1
         # self.name = "coffeesalesmonthlynormalized"
 
@@ -1061,7 +1061,7 @@ class SolarEnergyProductionDaily(Dataset):
     def __init__(self):
         super().__init__(Task.FORECASTING)
         self.acronym = "SEP"
-        self.forecasting_horizon = 52
+        self.forecasting_horizon = 12
         # self.name = "solarenergyproductiondaily"
 
     def load_dataset(self):
@@ -1079,8 +1079,8 @@ class SolarEnergyProductionDaily(Dataset):
 class SolarEnergyProductionDailyNormalized(Dataset):
     def __init__(self):
         super().__init__(Task.FORECASTING)
-        self.acronym = "SEP"
-        self.forecasting_horizon = 52
+        self.acronym = "SEPn"
+        self.forecasting_horizon = 12
         # self.name = "solarenergyproductiondailynormalized"
 
     def load_dataset(self):
@@ -1121,7 +1121,7 @@ class SunspotsMonthly(Dataset):
 class SunspotsMonthlyNormalized(Dataset):
     def __init__(self):
         super().__init__(Task.FORECASTING)
-        self.acronym = "CS"
+        self.acronym = "SSn"
         self.forecasting_horizon = 52
 
     def load_dataset(self):
@@ -1151,9 +1151,9 @@ imbalanced_distribution_datasets = {
             }
 
 forecasting_datasets = {
-    "coffeesalesdaily": CoffeeSalesDaily,
-    "coffeesalesmonthly": CoffeeSalesMonthly,
-    "coffeesalesmonthlynormalized": CoffeeSalesMonthlyNormalized,
+    # "coffeesalesdaily": CoffeeSalesDaily,
+    # "coffeesalesmonthly": CoffeeSalesMonthly,
+    # "coffeesalesmonthlynormalized": CoffeeSalesMonthlyNormalized,
     "solarenergyproductiondaily": SolarEnergyProductionDaily,
     "solarenergyproductiondailynormalized": SolarEnergyProductionDailyNormalized,
     "sunspotsmonthly": SunspotsMonthly,

@@ -9,11 +9,11 @@ from src.experiments.print_results import parse_txt_file
 from src.experiments.utils import replace_last_occurences
 
 
-def latex_table_from_txt(files: List[str], relevant_configs: List[str], metrics: List[str], row_names: Dict[str, List[str]],
-                         column_names: Dict[str, List[str]], nb_configs_groups: int,
-                         # algorithm, configs, metrics, method=Keys.xgboost_default, name=Keys.cv5x2,
-                         # suffix=default_suffix,
-                         bold=False):
+def big_latex_table_from_txt(files: List[str], relevant_configs: List[str], metrics: List[str], row_names: Dict[str, List[str]],
+                             column_names: Dict[str, List[str]], nb_configs_groups: int,
+                             # algorithm, configs, metrics, method=Keys.xgboost_default, name=Keys.cv5x2,
+                             # suffix=default_suffix,
+                             bold=False):
     """
     Print a latex table from txt files
 
@@ -58,6 +58,53 @@ def latex_table_from_txt(files: List[str], relevant_configs: List[str], metrics:
     print("End of table\n\n")
 
 
+def latex_table_from_txt(files: List[str], relevant_configs: Dict[str, List[str]], metric: str, row_names: Dict[str, List[str]],
+                             column_names: List[str], bold=False):
+    """
+    Print a latex table from txt files
+
+    Parameters
+    ----------
+    files: List[str]
+        List of paths to the txt files
+    relevant_configs: List[str]
+
+    metric: str
+        Metric to extract from the txt files
+    row_names: Dict[str, List[str]]
+        Names of the rows, possibly nested
+    column_names: List[str]
+        Names of the columns
+    """
+    # if suffix != default_suffix:
+    #     print("Warning: suffix is ignored when using txt files.")
+    nb_configs_per_key = [len(configs) for configs in relevant_configs.values()]
+    table = np.empty((len(files) * len(relevant_configs.keys()), nb_configs_per_key[0]), dtype=object)
+
+    for i, file in enumerate(files):
+        if file is None:
+            for j in range(len(relevant_configs)):
+                table[i, j] = "{missing}"
+            continue
+        results = parse_txt_file(file)
+        for nb_config, config_list in enumerate(relevant_configs.values()):
+            for j, config in enumerate(config_list):
+                metric_values = extract_metrics(results[config], [metric])
+                fill_metrics_small_table(metric_values, table, nb_config, i, j, len(files))
+
+    if bold:
+        table = best_in_bold(table, relevant_configs, nb_configs_per_key[0], lower_is_better=True)
+    df_index = [f"{k}_{v}" for k in row_names.keys() for v in row_names[k]]
+    df_columns = column_names
+    df_table = pd.DataFrame(table, index=df_index, columns=df_columns)
+    result_table = df_table.style.to_latex(hrules=True)
+    # result_table = make_multi_column(result_table, column_names, df_columns)
+    result_table = make_multi_row(result_table, row_names, df_index)
+
+    print(result_table)
+    print("End of table\n\n")
+
+
 def extract_metrics(results: Dict[str, float], metrics: List[str]) -> Dict[str, Tuple[float, float]]:
     values = {}
     for metric in metrics:
@@ -74,6 +121,40 @@ def extract_metrics(results: Dict[str, float], metrics: List[str]) -> Dict[str, 
         except KeyError:
             values[metric] = None, None
     return values
+
+
+def fill_metrics_small_table(metric_values, table, nb_config, i_dataset, j_config, nb_datasets):
+    """
+    Fill the table with the metric values
+
+    Parameters
+    ----------
+    metric_values: dict
+        Dictionary with the metric values. There should only be one metric in the dictionary.
+    table: np.ndarray
+        Table to fill, with dimensions (len(datasets)*len(clfs), len(configs))
+    i_dataset: int
+        Index of the dataset
+    j_config: int
+        Index of the config
+    nb_datasets: int
+        Number of datasets
+
+    Returns
+    -------
+    None, modifies the table in place
+
+    """
+    for metric_name, values in metric_values.items():
+        (value, std) = values
+        indices = [i_dataset + nb_config*nb_datasets, j_config]
+        if value is None or std is None or math.isnan(value):  # or math.isnan(std):
+            table[indices] = "{missing}"
+        else:
+            round_value = 3
+            round_std = 2
+
+            table[indices[0], indices[1]] = format_metric(value, std, round_value, round_std)
 
 def fill_metrics_big_table(metric_values, table, i_dataset, j_config, nb_datasets):
     """
