@@ -3,7 +3,7 @@ import os
 import numpy as np
 from sklearn.preprocessing import QuantileTransformer, PowerTransformer, RobustScaler
 
-from src.algorithms.transformers import NormalizeTransformer, LogTransformer
+from src.transformations.transformers import NormalizeTransformer, LogTransformer
 
 SEED = 0
 default_suffix = ''

@@ -21,7 +21,7 @@ from sklearn.model_selection import RepeatedKFold, RepeatedStratifiedKFold, Time
 from ucimlrepo import fetch_ucirepo
 
 from .utils.constants import SEED
-from ..algorithms.transformers import LogTransformer
+from ..transformations.transformers import LogTransformer
 
 # MODEL_DIR = os.environ["MODEL_DIR"]
 DATA_DIR = os.environ["DATA_DIR"]
